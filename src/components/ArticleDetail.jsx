@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Video, Paperclip, FileText, Download, ArrowLeft, ArrowRight } from 'lucide-react';
 
 export default function ArticleDetail({ article, lang, onGoToHome, articles, onArticleClick }) {
   if (!article) return null;
@@ -102,7 +103,7 @@ export default function ArticleDetail({ article, lang, onGoToHome, articles, onA
                   </div>
                 ) : (
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3">
-                    <span className="text-2xl">📹</span>
+                    <Video className="w-8 h-8 text-[#4c6cd0] shrink-0" />
                     <div>
                       <h4 className="text-xs font-bold text-slate-800">{article.videoName || 'Video Attachment'}</h4>
                       <p className="text-[10px] text-slate-400">{lang === 'en' ? 'Video playback is active in current session.' : 'تشغيل الفيديو متاح خلال الجلسة الحالية.'}</p>
@@ -116,7 +117,7 @@ export default function ArticleDetail({ article, lang, onGoToHome, articles, onA
             {hasAttachments && (
               <div className="mt-8 border-t border-slate-100 pt-6">
                 <h3 className="text-xs font-extrabold text-slate-800 mb-4 flex items-center gap-1.5">
-                  <span>📎</span> {t.attachmentsTitle}
+                  <Paperclip className="w-4 h-4 text-[#4c6cd0]" /> {t.attachmentsTitle}
                 </h3>
                 <div className="flex flex-col gap-2.5">
                   {article.attachments.map((file, idx) => (
@@ -125,7 +126,7 @@ export default function ArticleDetail({ article, lang, onGoToHome, articles, onA
                       className="p-3.5 rounded-xl border border-slate-200/50 bg-[#faf8f4] flex items-center justify-between hover:bg-slate-50 transition-colors"
                     >
                       <div className="flex items-center gap-3 overflow-hidden">
-                        <span className="text-xl flex-shrink-0">📄</span>
+                        <FileText className="w-5 h-5 text-[#4c6cd0] shrink-0" />
                         <div className="overflow-hidden">
                           <h4 className="text-xs font-bold text-slate-800 truncate" title={file.name}>
                             {file.name}
@@ -140,7 +141,7 @@ export default function ArticleDetail({ article, lang, onGoToHome, articles, onA
                         download={file.name}
                         className="px-4 py-1.5 rounded-lg bg-[#4c6cd0] hover:bg-[#314b9b] text-white text-[10px] font-bold transition-all shadow-sm shadow-[#4c6cd0]/10 flex items-center gap-1 flex-shrink-0"
                       >
-                        <span>⬇️</span>
+                        <Download className="w-3.5 h-3.5" />
                         <span>{t.download}</span>
                       </a>
                     </div>
@@ -153,9 +154,9 @@ export default function ArticleDetail({ article, lang, onGoToHome, articles, onA
             <div className="mt-10 pt-6 border-t border-slate-100 flex">
               <button
                 onClick={onGoToHome}
-                className="px-5 py-2.5 rounded-full border border-slate-200 text-slate-600 hover:text-[#4c6cd0] hover:border-[#4c6cd0]/35 text-xs font-bold transition-all flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-full border border-slate-200 text-slate-600 hover:text-[#4c6cd0] hover:border-[#4c6cd0]/35 text-xs font-bold transition-all flex items-center gap-2"
               >
-                <span>{lang === 'ar' ? '→' : '←'}</span>
+                {lang === 'ar' ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
                 <span>{t.back}</span>
               </button>
             </div>

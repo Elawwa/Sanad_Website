@@ -8,13 +8,35 @@ import Booking from './components/Booking';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import PortalLoginModal from './components/PortalLoginModal';
-import PaymentModal from './components/PaymentModal';
 import AdminPortal from './components/AdminPortal';
 import ServiceDetail from './components/ServiceDetail';
 import Articles from './components/Articles';
 import ArticleDetail from './components/ArticleDetail';
 import Toast from './components/Toast';
 import CustomDialog from './components/CustomDialog';
+import { sendBookingEmails, sendContactEmails } from './utils/email';
+import { sanitizeAndValidateBooking, sanitizeAndValidateContact } from './utils/validation';
+import { auth, db } from './firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import {
+  getSettings,
+  updateSettings,
+  getAnnouncement,
+  updateAnnouncement,
+  getArticles,
+  createArticle,
+  deleteArticle,
+  updateArticle,
+  getBookings,
+  createBooking,
+  updateBooking,
+  deleteBooking,
+  getContacts,
+  createContact,
+  updateContactStatus,
+  deleteContact
+} from './services/firebaseService';
 
 // --- Default & Seed Data Configuration ---
 const defaultSettings = {
@@ -23,7 +45,11 @@ const defaultSettings = {
   hoursEn: "Monday - Friday: 9:00 AM - 6:00 PM\nSaturday - Sunday: Closed",
   hoursAr: "الاثنين - الجمعة: 9:00 صباحاً - 6:00 مساءً\nالسبت - الأحد: مغلق",
   addressEn: "Sharjah Research Technology & Innovation Park, Sharjah, United Arab Emirates",
-  addressAr: "مجمع الشارقة للبحوث والتكنولوجيا والابتكار، الشارقة، الإمارات العربية المتحدة"
+  addressAr: "مجمع الشارقة للبحوث والتكنولوجيا والابتكار، الشارقة، الإمارات العربية المتحدة",
+  linkedin: "https://linkedin.com",
+  youtube: "https://youtube.com",
+  instagram: "https://instagram.com",
+  whatsapp: "https://wa.me/97165551234"
 };
 
 const defaultAnnouncement = {
@@ -32,19 +58,8 @@ const defaultAnnouncement = {
   visible: true
 };
 
-const defaultContacts = [
-  { id: 1, name: "Fatima Al-Mansoori", email: "fatima.almansoori@gmail.com", phone: "+971 50 123 4567", message: "Hello, we want to expand our business to Sharjah free zone next month. Can we schedule a meeting?", date: new Date().toLocaleDateString(), status: "New" },
-  { id: 2, name: "Richard Smith", email: "richard.smith@uk-logistics.com", phone: "+44 7911 123456", message: "Inquiry on Corporate Tax registration thresholds for UAE branches of British firms.", date: new Date().toLocaleDateString(), status: "New" }
-];
-
-const defaultBookings = [
-  { id: 101, name: "George Miller", phone: "+971 50 123 4567", email: "george@miller.com", brief: "Need a legal draft review for a SaaS setup.", type: "online", ref: "SND-1029", status: "Paid & Pending Review", date: new Date().toLocaleDateString(), assignedEmployeeId: 1 },
-  { id: 102, name: "Lina K.", phone: "+971 52 987 6543", email: "lina@k-setup.ae", brief: "In-person consultation to establish UAE mainland LLC.", type: "in-person", ref: "SND-3049", status: "Scheduled", appointmentDetails: "Sharjah Office on June 15th at 10:00 AM", date: new Date().toLocaleDateString(), assignedEmployeeId: 2 }
-];
-
 const defaultArticles = [
   {
-    id: 1,
     titleEn: "Navigating the New UAE Corporate Tax Regime",
     titleAr: "فهم نظام ضريبة الشركات الجديد في دولة الإمارات",
     categoryEn: "Tax Advisory",
@@ -52,61 +67,34 @@ const defaultArticles = [
     contentEn: "The UAE Federal Tax Authority has introduced a corporate tax rate of 9% for taxable income exceeding AED 375,000. Business owners must structure their operations properly to benefit from small business relief and free zone exemptions. Keeping proper books of accounts is now mandatory for compliance.",
     contentAr: "أعلنت الهيئة الاتحادية للضرائب عن بدء تطبيق ضريبة الشركات بنسبة 9% على الدخل الخاضع للضريبة الذي يتجاوز 375,000 درهم إماراتي. يجب على أصحاب الأعمال هيكلة عملياتهم بشكل صحيح للاستفادة من تسهيلات الأعمال الصغيرة والإعفاءات المتاحة للمناطق الحرة. أصبح الاحتفاظ بدفاتر حسابات دقيقة أمراً إلزامياً للامتثال القانوني.",
     coverImage: "/sanad_about_office.png",
-    date: new Date(2026, 5, 20).toLocaleDateString(),
-    attachments: [],
-    video: ""
-  },
-  {
-    id: 2,
-    titleEn: "Mainland vs. Free Zone Setup: Which is Right for You?",
-    titleAr: "تأسيس الشركات: البر الرئيسي مقابل المنطقة الحرة",
-    categoryEn: "Corporate Setup",
-    categoryAr: "تأسيس الشركات",
-    contentEn: "Choosing between a mainland entity and a free zone setup depends on your target market. A mainland company allows you to trade freely anywhere in the UAE, while a free zone setup offers 100% foreign ownership and tax exemptions, but limits direct trading in the local market without an agent.",
-    contentAr: "يعتمد الاختيار بين شركة البر الرئيسي وتأسيس شركة في المنطقة الحرة على السوق المستهدف. تتيح لك شركة البر الرئيسي التداول بحرية في أي مكان داخل الإمارات، بينما يوفر تأسيس شركة في المنطقة الحرة ملكية أجنبية بنسبة 100% وإعفاءات ضريبية، ولكنه يحد من التجارة المباشرة في السوق المحلي بدون وكيل.",
-    coverImage: "/sanad_hero_symbol.png",
-    date: new Date(2026, 5, 22).toLocaleDateString(),
+    date: new Date(2026, 5, 20).toISOString().split('T')[0],
     attachments: [],
     video: ""
   }
 ];
 
-// Helper to seed localStorage
-const getLocalStorageItem = (key, defaultValue) => {
-  const data = localStorage.getItem(key);
-  if (!data) {
-    localStorage.setItem(key, JSON.stringify(defaultValue));
-    return defaultValue;
-  }
-  try {
-    return JSON.parse(data);
-  } catch (e) {
-    return defaultValue;
-  }
-};
-
 export default function App() {
   // --- Core State Variables ---
   const [lang, setLang] = useState('en');
-  const [portal, setPortal] = useState('client'); // 'client', 'employee', 'admin'
-  const [loginTargetPortal, setLoginTargetPortal] = useState(''); // 'employee' or 'admin'
+  const [portal, setPortal] = useState('client'); // 'client', 'admin'
+  const [loginTargetPortal, setLoginTargetPortal] = useState(''); // 'admin'
   const [currentView, setCurrentView] = useState('home'); // 'home', 'service-detail', 'article-detail'
   const [selectedServiceId, setSelectedServiceId] = useState('setup');
-  const [selectedArticleId, setSelectedArticleId] = useState(1);
-  const [articles, setArticles] = useState(() => getLocalStorageItem('sanad_articles', defaultArticles));
+  const [selectedArticleId, setSelectedArticleId] = useState('');
   
-  // Storage properties
-  const [siteSettings, setSiteSettings] = useState(() => getLocalStorageItem('sanad_site_settings', defaultSettings));
-  const [announcement, setAnnouncement] = useState(() => getLocalStorageItem('sanad_announcement', defaultAnnouncement));
-  const [contacts, setContacts] = useState(() => getLocalStorageItem('sanad_contacts', defaultContacts));
-  const [bookings, setBookings] = useState(() => getLocalStorageItem('sanad_bookings', defaultBookings));
+  // Backend backed states
+  const [articles, setArticles] = useState([]);
+  const [siteSettings, setSiteSettings] = useState(defaultSettings);
+  const [announcement, setAnnouncement] = useState(defaultAnnouncement);
+  const [contacts, setContacts] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [user, setUser] = useState(null);
   
   // Dashboard states
   const [tempBookingData, setTempBookingData] = useState(null);
 
   // Overlay modale states
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Custom alerts/toasts states
   const [toast, setToast] = useState(null); // { message, type: 'success' | 'error' | 'info' }
@@ -120,93 +108,352 @@ export default function App() {
     setToast(null);
   };
 
-  const showAlert = (message, title = '', onConfirm = () => {}) => {
+  const openDialog = (config) => {
     setCustomDialog({
+      ...config,
       isOpen: true,
-      type: 'alert',
-      title,
-      message,
-      onConfirm: () => {
-        setCustomDialog(null);
-        onConfirm();
-      },
-      onCancel: () => {
-        setCustomDialog(null);
-      }
-    });
-  };
-
-  const showConfirm = (message, title = '', onConfirm = () => {}, onCancel = () => {}) => {
-    setCustomDialog({
-      isOpen: true,
-      type: 'confirm',
-      title,
-      message,
-      onConfirm: () => {
-        setCustomDialog(null);
-        onConfirm();
-      },
-      onCancel: () => {
-        setCustomDialog(null);
-        onCancel();
-      }
-    });
-  };
-
-  const showPrompt = (message, placeholder = '', title = '', onConfirm = () => {}, onCancel = () => {}, defaultValue = '') => {
-    setCustomDialog({
-      isOpen: true,
-      type: 'prompt',
-      title,
-      message,
-      placeholder,
-      defaultValue,
       onConfirm: (val) => {
         setCustomDialog(null);
-        onConfirm(val);
+        if (config.onConfirm) config.onConfirm(val);
       },
       onCancel: () => {
         setCustomDialog(null);
-        onCancel();
+        if (config.onCancel) config.onCancel();
       }
     });
   };
 
-  // --- Sync State back to LocalStorage when changed ---
-  useEffect(() => {
-    localStorage.setItem('sanad_site_settings', JSON.stringify(siteSettings));
-  }, [siteSettings]);
+  const showAlert = (message, title = '', onConfirm) => openDialog({ type: 'alert', message, title, onConfirm });
+  const showConfirm = (message, title = '', onConfirm, onCancel) => openDialog({ type: 'confirm', message, title, onConfirm, onCancel });
+  const showPrompt = (message, placeholder = '', title = '', onConfirm, onCancel, defaultValue = '') => openDialog({ type: 'prompt', message, placeholder, title, defaultValue, onConfirm, onCancel });
 
+  // --- Fetch Public Data on Mount & Seed if Empty ---
   useEffect(() => {
-    localStorage.setItem('sanad_announcement', JSON.stringify(announcement));
-  }, [announcement]);
+    const fetchPublicData = async () => {
+      try {
+        // Load Settings
+        let settingsData = await getSettings();
+        if (!settingsData) {
+          console.log('Seeding default site settings to Firestore...');
+          await updateSettings(defaultSettings);
+          settingsData = defaultSettings;
+        }
+        setSiteSettings(settingsData);
 
+        // Load Announcement
+        let announceData = await getAnnouncement();
+        if (!announceData) {
+          console.log('Seeding default announcement to Firestore...');
+          await updateAnnouncement(defaultAnnouncement);
+          announceData = defaultAnnouncement;
+        }
+        setAnnouncement(announceData);
+
+        // Load Articles
+        let articlesData = await getArticles();
+        if (articlesData.length === 0) {
+          console.log('Seeding default articles to Firestore...');
+          const seeded = await createArticle(defaultArticles[0]);
+          articlesData = [seeded];
+        }
+        setArticles(articlesData);
+        if (articlesData.length > 0) {
+          setSelectedArticleId(articlesData[0].id);
+        }
+      } catch (err) {
+        console.error('Error fetching public data:', err);
+      }
+    };
+    fetchPublicData();
+  }, []);
+
+  // --- Firebase Auth State Listener ---
   useEffect(() => {
-    localStorage.setItem('sanad_contacts', JSON.stringify(contacts));
-  }, [contacts]);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // S2: Verify role from Firestore — never assume any authenticated user is an admin
+        try {
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          const isAdmin = userDoc.exists() && userDoc.data().role === 'admin';
 
-  useEffect(() => {
-    localStorage.setItem('sanad_bookings', JSON.stringify(bookings));
-  }, [bookings]);
+          if (!isAdmin) {
+            // Authenticated but not an admin — sign them out immediately
+            await signOut(auth);
+            setUser(null);
+            setPortal('client');
+            return;
+          }
 
-  useEffect(() => {
-    localStorage.setItem('sanad_articles', JSON.stringify(articles));
-  }, [articles]);
+          setUser({ username: firebaseUser.email, role: 'admin' });
+          setPortal('admin');
 
-  const handlePublishArticle = (newArticle) => {
-    setArticles((prev) => [newArticle, ...prev]);
-    showToast(
-      lang === 'en' ? 'Article published successfully!' : 'تم نشر المقال بنجاح!',
-      'success'
-    );
+          const bookingsData = await getBookings();
+          setBookings(bookingsData);
+
+          const contactsData = await getContacts();
+          setContacts(contactsData);
+        } catch (err) {
+          console.error('Error verifying admin role:', err.message);
+          await signOut(auth);
+          setUser(null);
+          setPortal('client');
+        }
+      } else {
+        setUser(null);
+        setPortal('client');
+        setBookings([]);
+        setContacts([]);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // --- Action Handlers ---
+
+  const handleLangToggle = () => {
+    setLang((prev) => (prev === 'en' ? 'ar' : 'en'));
   };
 
-  const handleDeleteArticle = (articleId) => {
-    setArticles((prev) => prev.filter(a => a.id !== articleId));
-    showToast(
-      lang === 'en' ? 'Article deleted successfully!' : 'تم حذف المقال بنجاح!',
-      'info'
-    );
+  const handlePortalChange = async (newPortal) => {
+    if (newPortal === 'client') {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
+      setCurrentView('home');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setPortal(newPortal);
+    }
+  };
+
+  const handlePortalTriggerClick = (target) => {
+    if (portal === target) {
+      setPortal(target);
+    } else {
+      setLoginTargetPortal(target);
+      setShowLoginModal(true);
+    }
+  };
+
+  const handleLoginSuccess = (newToken, loggedInUser) => {
+    setUser(loggedInUser);
+    setPortal(loggedInUser.role);
+    setShowLoginModal(false);
+    showToast(lang === 'en' ? 'Logged in successfully!' : 'تم تسجيل الدخول بنجاح!', 'success');
+  };
+
+  // D1: extracted from the two submit handlers — single source of truth for the cooldown
+  const SUBMIT_COOLDOWN_MS = 30_000;
+  const isRateLimited = () => {
+    const lastSubmit = localStorage.getItem('last_submit_time');
+    return lastSubmit && Date.now() - parseInt(lastSubmit, 10) < SUBMIT_COOLDOWN_MS;
+  };
+
+  const handleBookingSubmit = async (formData) => {
+    // 1. Anti-spam honeypot filter — fully silent
+    if (formData.isSpam) return;
+
+    // 2. Rate limiting
+    if (isRateLimited()) {
+      showToast(lang === 'en' ? 'Please wait 30 seconds between submissions.' : 'يرجى الانتظار 30 ثانية بين عمليات الإرسال.', 'warning');
+      return;
+    }
+    const now = Date.now();
+
+    // 3. Validation and Sanitization
+    const validation = sanitizeAndValidateBooking(formData);
+    if (!validation.isValid) {
+      showToast(validation.errors[0], 'error');
+      return;
+    }
+
+    const code = 'SND-' + Math.floor(1000 + Math.random() * 9000);
+    const bookingData = {
+      ...validation.sanitized,
+      ref: code,
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    try {
+      const newBooking = await createBooking(bookingData);
+
+      // H1: fire email but catch failures so they surface as a console warning, not a silent swallow
+      sendBookingEmails(bookingData).catch(e => console.warn('EmailJS booking notification failed:', e.message));
+
+      // Save submission timestamp
+      localStorage.setItem('last_submit_time', now.toString());
+      setTempBookingData(null);
+
+      showAlert(
+        lang === 'en'
+          ? `Your consultation has been booked successfully! Reference code: ${code}. The team will review and schedule your session.`
+          : `تم حجز استشارتك بنجاح! رمز المرجع: ${code}. سيقوم الفريق بمراجعة وجدولة جلستك.`,
+        lang === 'en' ? 'Booking Confirmed' : 'تم تأكيد الحجز'
+      );
+    } catch (err) {
+      console.error('Booking failed:', err.message);
+      showToast(lang === 'en' ? 'Booking failed.' : 'فشل الحجز.', 'error');
+    }
+  };
+
+  const handleContactSubmit = async (formData) => {
+    // 1. Anti-spam honeypot filter — fully silent
+    if (formData.isSpam) return;
+
+    // 2. Rate limiting
+    if (isRateLimited()) {
+      showToast(lang === 'en' ? 'Please wait 30 seconds between submissions.' : 'يرجى الانتظار 30 ثانية بين عمليات الإرسال.', 'warning');
+      return;
+    }
+    const now = Date.now();
+
+    // 3. Validation and Sanitization
+    const validation = sanitizeAndValidateContact(formData);
+    if (!validation.isValid) {
+      showToast(validation.errors[0], 'error');
+      return;
+    }
+
+    try {
+      const newContact = await createContact(validation.sanitized);
+
+      // H1: fire email but catch failures so they surface as a console warning, not a silent swallow
+      sendContactEmails(validation.sanitized).catch(e => console.warn('EmailJS contact notification failed:', e.message));
+
+      // Save submission timestamp
+      localStorage.setItem('last_submit_time', now.toString());
+      showToast(
+        lang === 'en' ? 'Message sent successfully! We will get back to you.' : 'تم إرسال الرسالة بنجاح! سنتواصل معك قريباً.',
+        'success'
+      );
+    } catch (err) {
+      console.error('Contact submission failed:', err.message);
+      showToast(lang === 'en' ? 'Failed to send message.' : 'فشل إرسال الرسالة.', 'error');
+    }
+  };
+
+  const handleScheduleBooking = async (bookingId, details) => {
+    try {
+      const updated = await updateBooking(bookingId, { status: 'Scheduled', appointmentDetails: details });
+      setBookings((prev) => prev.map(b => b.id === bookingId ? { ...b, ...updated } : b));
+      showToast(lang === 'en' ? 'Booking scheduled!' : 'تمت جدولة الحجز!', 'success');
+    } catch (err) {
+      console.error('Schedule booking failed:', err.message);
+      showToast(lang === 'en' ? 'Failed to schedule.' : 'فشلت الجدولة.', 'error');
+    }
+  };
+
+  const handleCompleteBooking = async (bookingId) => {
+    try {
+      const updated = await updateBooking(bookingId, { status: 'Completed' });
+      setBookings((prev) => prev.map(b => b.id === bookingId ? { ...b, ...updated } : b));
+      showToast(lang === 'en' ? 'Booking completed!' : 'اكتمل الحجز!', 'success');
+    } catch (err) {
+      console.error('Complete booking failed:', err.message);
+      showToast(lang === 'en' ? 'Failed to complete booking.' : 'فشل إتمام الحجز.', 'error');
+    }
+  };
+
+  const handleMarkContactRead = async (contactId) => {
+    try {
+      const updated = await updateContactStatus(contactId, 'Processed');
+      setContacts((prev) => prev.map(c => c.id === contactId ? { ...c, ...updated } : c));
+    } catch (err) {
+      console.error('Mark contact read failed:', err.message);
+      showToast(lang === 'en' ? 'Failed to update message.' : 'فشل تحديث الرسالة.', 'error');
+    }
+  };
+
+  const handleDeleteContact = async (contactId) => {
+    try {
+      await deleteContact(contactId);
+      setContacts((prev) => prev.filter(c => c.id !== contactId));
+      showToast(lang === 'en' ? 'Message deleted!' : 'تم حذف الرسالة!', 'info');
+    } catch (err) {
+      console.error('Delete contact failed:', err.message);
+      showToast(lang === 'en' ? 'Failed to delete message.' : 'فشل حذف الرسالة.', 'error');
+    }
+  };
+
+  // Admin actions
+  const handleSaveSettings = async (settings, announce) => {
+    try {
+      await updateSettings(settings);
+      await updateAnnouncement(announce);
+
+      setSiteSettings(settings);
+      setAnnouncement(announce);
+      showToast(lang === 'en' ? 'Settings saved!' : 'تم حفظ الإعدادات!', 'success');
+    } catch (err) {
+      console.error('Save settings failed:', err.message);
+      showToast(lang === 'en' ? 'Failed to save settings.' : 'فشل حفظ الإعدادات.', 'error');
+    }
+  };
+
+  const handleToggleAnnouncementVisibility = async (visible) => {
+    try {
+      const updated = { ...announcement, visible };
+      await updateAnnouncement(updated);
+      setAnnouncement(updated);
+    } catch (err) {
+      console.error('Toggle announcement failed:', err.message);
+      showToast(lang === 'en' ? 'Failed to update announcement.' : 'فشل تحديث الإعلان.', 'error');
+    }
+  };
+
+  const handleDeleteBooking = async (bookingId) => {
+    try {
+      await deleteBooking(bookingId);
+      setBookings((prev) => prev.filter(b => b.id !== bookingId));
+      showToast(lang === 'en' ? 'Booking deleted!' : 'تم حذف الحجز!', 'info');
+    } catch (err) {
+      console.error('Delete booking failed:', err.message);
+      showToast(lang === 'en' ? 'Failed to delete booking.' : 'فشل حذف الحجز.', 'error');
+    }
+  };
+
+  const handlePublishArticle = async (newArticle) => {
+    try {
+      const created = await createArticle(newArticle);
+      setArticles((prev) => [created, ...prev]);
+      showToast(
+        lang === 'en' ? 'Article published successfully!' : 'تم نشر المقال بنجاح!',
+        'success'
+      );
+    } catch (err) {
+      console.error('Publish article failed:', err.message);
+      showToast(lang === 'en' ? 'Failed to publish.' : 'فشل النشر.', 'error');
+    }
+  };
+
+  const handleDeleteArticle = async (articleId) => {
+    try {
+      await deleteArticle(articleId);
+      setArticles((prev) => prev.filter(a => a.id !== articleId));
+      showToast(
+        lang === 'en' ? 'Article deleted successfully!' : 'تم حذف المقال بنجاح!',
+        'info'
+      );
+    } catch (err) {
+      console.error('Delete article failed:', err.message);
+      showToast(lang === 'en' ? 'Failed to delete article.' : 'فشل حذف المقال.', 'error');
+    }
+  };
+
+  const handleUpdateArticle = async (articleId, updatedData) => {
+    try {
+      const updated = await updateArticle(articleId, updatedData);
+      setArticles((prev) => prev.map(a => a.id === articleId ? { ...a, ...updated } : a));
+      showToast(
+        lang === 'en' ? 'Article updated successfully!' : 'تم تحديث المقال بنجاح!',
+        'success'
+      );
+    } catch (err) {
+      console.error(err);
+      showToast(lang === 'en' ? 'Failed to update article.' : 'فشل تحديث المقال.', 'error');
+    }
   };
 
   // --- Localization Direction Sync ---
@@ -237,23 +484,17 @@ export default function App() {
   useEffect(() => {
     const revealElements = document.querySelectorAll('.reveal-on-scroll');
     if ('IntersectionObserver' in window && revealElements.length > 0) {
-      const observer = new IntersectionObserver((entries, obs) => {
-        entries.forEach(entry => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('visible');
-            obs.unobserve(entry.target);
           }
         });
-      }, {
-        root: null,
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-      });
-
-      revealElements.forEach(el => observer.observe(el));
+      }, { threshold: 0.1 });
+      revealElements.forEach((el) => observer.observe(el));
       return () => observer.disconnect();
     }
-  }, [portal]); // re-observe when routing templates swap
+  }, []);
 
   // --- History & Browser Back Redirection ---
   useEffect(() => {
@@ -281,140 +522,93 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // --- Action Handlers ---
-
-  const handleLangToggle = () => {
-    setLang((prev) => (prev === 'en' ? 'ar' : 'en'));
-  };
-
-  const handlePortalChange = (newPortal) => {
-    setPortal(newPortal);
-    if (newPortal === 'client') {
-      setCurrentView('home');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const handlePortalTriggerClick = (target) => {
-    if (portal === target) {
-      setPortal(target);
-    } else {
-      setLoginTargetPortal(target);
-      setShowLoginModal(true);
-    }
-  };
-
-  const handleLoginSuccess = (target) => {
-    setPortal(target);
-    setShowLoginModal(false);
-  };
-
-  const handleBookingSubmit = (formData) => {
-    setTempBookingData(formData);
-    setShowPaymentModal(true);
-  };
-
-  const handlePaymentSuccess = (code) => {
-    const newBooking = {
-      id: Date.now(),
-      name: tempBookingData.name,
-      phone: tempBookingData.phone,
-      email: tempBookingData.email,
-      brief: tempBookingData.brief,
-      type: tempBookingData.type,
-      ref: code,
-      status: 'Pending Review',
-      date: new Date().toLocaleDateString(),
-      assignedEmployeeId: null
-    };
-
-    setBookings((prev) => [...prev, newBooking]);
-    setTempBookingData(null);
-
-    // Show a beautiful Alert dialog instead of just closing
-    showAlert(
-      lang === 'en'
-        ? `Your consultation has been booked successfully! Reference code: ${code}. The team will review and schedule your session.`
-        : `تم حجز استشارتك بنجاح! رمز المرجع: ${code}. سيقوم الفريق بمراجعة وجدولة جلستك.`,
-      lang === 'en' ? 'Booking Confirmed' : 'تم تأكيد الحجز'
-    );
-  };
-
-  const handleContactSubmit = (formData) => {
-    const newContact = {
-      id: Date.now(),
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      message: formData.message,
-      date: new Date().toLocaleDateString(),
-      status: 'New'
-    };
-    setContacts((prev) => [...prev, newContact]);
-    showToast(
-      lang === 'en' ? 'Message sent successfully! We will get back to you.' : 'تم إرسال الرسالة بنجاح! سنتواصل معك قريباً.',
-      'success'
-    );
-  };
-
-  const handleScheduleBooking = (bookingId, details) => {
-    setBookings((prev) => {
-      return prev.map(b => {
-        if (b.id === bookingId) {
-          return { ...b, status: 'Scheduled', appointmentDetails: details };
-        }
-        return b;
-      });
-    });
-  };
-
-  const handleCompleteBooking = (bookingId) => {
-    setBookings((prev) => {
-      return prev.map(b => {
-        if (b.id === bookingId) {
-          return { ...b, status: 'Completed' };
-        }
-        return b;
-      });
-    });
-  };
-
-  const handleMarkContactRead = (contactId) => {
-    setContacts((prev) => {
-      return prev.map(c => {
-        if (c.id === contactId) {
-          return { ...c, status: 'Processed' };
-        }
-        return c;
-      });
-    });
-  };
-
-  const handleDeleteContact = (contactId) => {
-    setContacts((prev) => prev.filter(c => c.id !== contactId));
-  };
-
-  // Admin actions
-  const handleSaveSettings = (settings, announce) => {
-    setSiteSettings(settings);
-    setAnnouncement(announce);
-  };
-
-  const handleToggleAnnouncementVisibility = (visible) => {
-    setAnnouncement((prev) => ({ ...prev, visible }));
-  };
-
-  const handleDeleteBooking = (bookingId) => {
-    setBookings((prev) => prev.filter(b => b.id !== bookingId));
-  };
 
   // Scroll callback from Hero CTA
   const handleScrollToBooking = () => {
     document.getElementById('book')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // P1: extracted — was inlined 3 times in the JSX
+  const handleServiceClick = (serviceId) => {
+    setCurrentView('service-detail');
+    setSelectedServiceId(serviceId);
+    window.history.pushState({ view: 'service-detail', serviceId }, '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const currentAnnounceText = lang === 'en' ? announcement?.textEn : announcement?.textAr;
   const isAnnounceVisible = announcement?.visible !== false;
+  const currentPath = window.location.pathname;
+
+  if (currentPath === '/admin') {
+    return (
+      <div className="app-root bg-slate-50 min-h-screen flex flex-col justify-between">
+        {!user ? (
+          <PortalLoginModal
+            targetPortal="admin"
+            lang={lang}
+            onClose={() => {
+              window.location.href = '/';
+            }}
+            onLoginSuccess={handleLoginSuccess}
+          />
+        ) : (
+          <AdminPortal
+            lang={lang}
+            siteSettings={siteSettings}
+            announcement={announcement}
+            bookings={bookings}
+            contacts={contacts}
+            onLogout={async () => {
+              try {
+                await signOut(auth);
+              } catch (e) {
+                console.error(e);
+              }
+              setUser(null);
+              window.location.href = '/';
+            }}
+            onSaveSettings={handleSaveSettings}
+            onToggleAnnouncementVisibility={handleToggleAnnouncementVisibility}
+            onScheduleBooking={handleScheduleBooking}
+            onCompleteBooking={handleCompleteBooking}
+            onDeleteBooking={handleDeleteBooking}
+            onMarkContactRead={handleMarkContactRead}
+            onDeleteContact={handleDeleteContact}
+            showToast={showToast}
+            showAlert={showAlert}
+            showConfirm={showConfirm}
+            showPrompt={showPrompt}
+            articles={articles}
+            onPublishArticle={handlePublishArticle}
+            onUpdateArticle={handleUpdateArticle}
+            onDeleteArticle={handleDeleteArticle}
+          />
+        )}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            lang={lang}
+            onClose={closeToast}
+          />
+        )}
+        {customDialog && (
+          <CustomDialog
+            isOpen={customDialog.isOpen}
+            type={customDialog.type}
+            title={customDialog.title}
+            message={customDialog.message}
+            placeholder={customDialog.placeholder}
+            defaultValue={customDialog.defaultValue}
+            lang={lang}
+            onConfirm={customDialog.onConfirm}
+            onCancel={customDialog.onCancel}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="app-root">
@@ -425,26 +619,16 @@ export default function App() {
         onLangToggle={handleLangToggle}
         onPortalTriggerClick={handlePortalTriggerClick}
         isAnnounceVisible={isAnnounceVisible}
-        onServiceClick={(serviceId) => {
-          setCurrentView('service-detail');
-          setSelectedServiceId(serviceId);
-          window.history.pushState({ view: 'service-detail', serviceId }, '');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
+        onServiceClick={handleServiceClick}
       />
 
       <AnnouncementBar announcement={announcement} lang={lang} />
 
-      {portal === 'client' && currentView === 'home' && (
+      {currentView === 'home' && (
         <main id="main-content">
           <Hero lang={lang} onBookClick={handleScrollToBooking} isAnnounceVisible={isAnnounceVisible} />
           <About lang={lang} />
-          <Services lang={lang} onServiceClick={(serviceId) => {
-            setCurrentView('service-detail');
-            setSelectedServiceId(serviceId);
-            window.history.pushState({ view: 'service-detail', serviceId }, '');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }} />
+          <Services lang={lang} onServiceClick={handleServiceClick} />
           <Articles lang={lang} articles={articles} onArticleClick={(articleId) => {
             setCurrentView('article-detail');
             setSelectedArticleId(articleId);
@@ -456,7 +640,7 @@ export default function App() {
         </main>
       )}
 
-      {portal === 'client' && currentView === 'service-detail' && (
+      {currentView === 'service-detail' && (
         <ServiceDetail
           serviceId={selectedServiceId}
           lang={lang}
@@ -468,15 +652,11 @@ export default function App() {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           }}
-          onServiceClick={(serviceId) => {
-            setSelectedServiceId(serviceId);
-            window.history.pushState({ view: 'service-detail', serviceId }, '');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
+          onServiceClick={handleServiceClick}
         />
       )}
 
-      {portal === 'client' && currentView === 'article-detail' && (
+      {currentView === 'article-detail' && (
         <ArticleDetail
           article={articles.find(a => a.id === selectedArticleId) || articles[0]}
           lang={lang}
@@ -497,32 +677,7 @@ export default function App() {
         />
       )}
 
-      {portal === 'admin' && (
-        <AdminPortal
-          lang={lang}
-          siteSettings={siteSettings}
-          announcement={announcement}
-          bookings={bookings}
-          contacts={contacts}
-          onLogout={() => handlePortalChange('client')}
-          onSaveSettings={handleSaveSettings}
-          onToggleAnnouncementVisibility={handleToggleAnnouncementVisibility}
-          onScheduleBooking={handleScheduleBooking}
-          onCompleteBooking={handleCompleteBooking}
-          onDeleteBooking={handleDeleteBooking}
-          onMarkContactRead={handleMarkContactRead}
-          onDeleteContact={handleDeleteContact}
-          showToast={showToast}
-          showAlert={showAlert}
-          showConfirm={showConfirm}
-          showPrompt={showPrompt}
-          articles={articles}
-          onPublishArticle={handlePublishArticle}
-          onDeleteArticle={handleDeleteArticle}
-        />
-      )}
-
-      <Footer onPortalClick={handlePortalTriggerClick} />
+      <Footer onPortalClick={handlePortalTriggerClick} siteSettings={siteSettings} lang={lang} />
 
       {showLoginModal && (
         <PortalLoginModal
@@ -533,14 +688,7 @@ export default function App() {
         />
       )}
 
-      {showPaymentModal && (
-        <PaymentModal
-          tempBookingData={tempBookingData}
-          lang={lang}
-          onClose={() => setShowPaymentModal(false)}
-          onPaymentSuccess={handlePaymentSuccess}
-        />
-      )}
+
 
       {toast && (
         <Toast

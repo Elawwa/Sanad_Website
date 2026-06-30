@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { db } from '../firebase';
+import { validateAdminArticle, sanitizeAndValidateSettings } from '../utils/validation';
 
 
 // Stat Card component
@@ -13,14 +15,41 @@ function StatCard({ label, value, accent = '#4c6cd0' }) {
       transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s',
       cursor: 'default',
     }}
-    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(76,108,208,0.12)'; }}
-    onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)'; }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(76,108,208,0.12)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04)'; }}
     >
       <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.6rem' }}>{label}</p>
       <p style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b', fontFamily: 'inherit', lineHeight: 1 }}>{value}</p>
     </div>
   );
 }
+const compressImage = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+    };
+  });
+};
 
 export default function AdminPortal({
   lang,
@@ -42,9 +71,11 @@ export default function AdminPortal({
   showPrompt,
   articles,
   onPublishArticle,
+  onUpdateArticle,
   onDeleteArticle
 }) {
   const [activeTab, setActiveTab] = useState('admin-stats-settings');
+  const [editingArticle, setEditingArticle] = useState(null); // { id, form: {...} }
 
   const [publishingForm, setPublishingForm] = useState({
     titleEn: '',
@@ -59,41 +90,7 @@ export default function AdminPortal({
     attachments: []
   });
 
-  const compressImage = (file) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target.result;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 600;
-          const MAX_HEIGHT = 400;
-          let width = img.width;
-          let height = img.height;
 
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.7));
-        };
-      };
-    });
-  };
 
   const handleCoverSelect = async (e) => {
     const file = e.target.files[0];
@@ -122,7 +119,7 @@ export default function AdminPortal({
   const handleAttachmentsSelect = (e) => {
     const files = Array.from(e.target.files);
     const newAttachments = [];
-    
+
     files.forEach(file => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -133,7 +130,7 @@ export default function AdminPortal({
           type: file.type,
           data: reader.result
         });
-        
+
         if (newAttachments.length === files.length) {
           setPublishingForm(prev => ({
             ...prev,
@@ -146,28 +143,25 @@ export default function AdminPortal({
 
   const handlePublishSubmit = (e) => {
     e.preventDefault();
-    if (!publishingForm.titleEn.trim() || !publishingForm.titleAr.trim() || !publishingForm.contentEn.trim() || !publishingForm.contentAr.trim()) {
-      showToast(lang === 'en' ? 'Please fill in all required fields.' : 'يرجى ملء جميع الحقول المطلوبة.', 'error');
+
+    const validation = validateAdminArticle(publishingForm);
+    if (!validation.isValid) {
+      showToast(validation.errors[0], 'error');
       return;
     }
-    
+
     const newArticle = {
       id: Date.now(),
-      titleEn: publishingForm.titleEn.trim(),
-      titleAr: publishingForm.titleAr.trim(),
-      categoryEn: publishingForm.categoryEn.trim(),
-      categoryAr: publishingForm.categoryAr.trim(),
-      contentEn: publishingForm.contentEn.trim(),
-      contentAr: publishingForm.contentAr.trim(),
+      ...validation.sanitized,
       coverImage: publishingForm.coverImage,
       video: publishingForm.video,
       videoName: publishingForm.videoName,
       attachments: publishingForm.attachments,
-      date: new Date().toLocaleDateString()
+      date: new Date().toISOString().split('T')[0]
     };
-    
+
     onPublishArticle(newArticle);
-    
+
     setPublishingForm({
       titleEn: '',
       titleAr: '',
@@ -182,11 +176,54 @@ export default function AdminPortal({
     });
   };
 
+  const handleEditStart = (art) => {
+    setEditingArticle({
+      id: art.id,
+      form: {
+        titleEn: art.titleEn || '',
+        titleAr: art.titleAr || '',
+        categoryEn: art.categoryEn || 'General',
+        categoryAr: art.categoryAr || 'عام',
+        contentEn: art.contentEn || '',
+        contentAr: art.contentAr || '',
+        coverImage: art.coverImage || '',
+      }
+    });
+  };
+
+  const handleEditCoverSelect = async (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const compressed = await compressImage(file);
+      setEditingArticle(prev => ({ ...prev, form: { ...prev.form, coverImage: compressed } }));
+    }
+  };
+
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    
+    const validation = validateAdminArticle(editingArticle.form);
+    if (!validation.isValid) {
+      showToast(validation.errors[0], 'error');
+      return;
+    }
+
+    onUpdateArticle(editingArticle.id, {
+      ...validation.sanitized,
+      coverImage: editingArticle.form.coverImage
+    });
+    setEditingArticle(null);
+  };
+
   const [settingsForm, setSettingsForm] = useState({
     phone: siteSettings.phone || '',
     email: siteSettings.email || '',
     hoursEn: siteSettings.hoursEn || '',
     hoursAr: siteSettings.hoursAr || '',
+    linkedin: siteSettings.linkedin || '',
+    youtube: siteSettings.youtube || '',
+    instagram: siteSettings.instagram || '',
+    whatsapp: siteSettings.whatsapp || '',
     announceEn: announcement.textEn || '',
     announceAr: announcement.textAr || '',
     announceVisible: announcement.visible !== false
@@ -198,6 +235,10 @@ export default function AdminPortal({
       email: siteSettings.email || '',
       hoursEn: siteSettings.hoursEn || '',
       hoursAr: siteSettings.hoursAr || '',
+      linkedin: siteSettings.linkedin || '',
+      youtube: siteSettings.youtube || '',
+      instagram: siteSettings.instagram || '',
+      whatsapp: siteSettings.whatsapp || '',
       announceEn: announcement.textEn || '',
       announceAr: announcement.textAr || '',
       announceVisible: announcement.visible !== false
@@ -221,6 +262,11 @@ export default function AdminPortal({
     announceEnLabel: lang === 'en' ? 'Text (EN)' : 'نص الإعلان (إنجليزي)',
     announceArLabel: lang === 'en' ? 'Text (AR)' : 'نص الإعلان (عربي)',
     announceEnableLabel: lang === 'en' ? 'Show Announcement Bar on Website' : 'إظهار شريط الإعلانات',
+    linkedinLabel: lang === 'en' ? 'LinkedIn URL' : 'رابط لينكد إن',
+    youtubeLabel: lang === 'en' ? 'YouTube URL' : 'رابط يوتيوب',
+    instagramLabel: lang === 'en' ? 'Instagram URL' : 'رابط إنستغرام',
+    whatsappLabel: lang === 'en' ? 'WhatsApp URL / Number' : 'رابط / رقم الواتساب',
+    socialTitle: lang === 'en' ? 'Social Media Links' : 'روابط التواصل الاجتماعي',
     saveSettingsBtn: lang === 'en' ? 'Save Settings' : 'حفظ الإعدادات',
     saveSettingsAlert: lang === 'en' ? 'Settings saved successfully!' : 'تم حفظ الإعدادات بنجاح!',
     thClient: lang === 'en' ? 'Client' : 'العميل',
@@ -260,9 +306,30 @@ export default function AdminPortal({
 
   const handleSettingsSubmit = (e) => {
     e.preventDefault();
+
+    const validation = sanitizeAndValidateSettings({
+      ...settingsForm
+    });
+
+    if (!validation.isValid) {
+      showToast(validation.errors[0], 'error');
+      return;
+    }
+
+    const s = validation.sanitized;
+
     onSaveSettings(
-      { phone: settingsForm.phone, email: settingsForm.email, hoursEn: settingsForm.hoursEn, hoursAr: settingsForm.hoursAr },
-      { textEn: settingsForm.announceEn, textAr: settingsForm.announceAr, visible: settingsForm.announceVisible }
+      { 
+        phone: s.phone, 
+        email: s.email, 
+        hoursEn: s.hoursEn, 
+        hoursAr: s.hoursAr,
+        linkedin: s.linkedin,
+        youtube: s.youtube,
+        instagram: s.instagram,
+        whatsapp: s.whatsapp
+      },
+      { textEn: s.announceEn, textAr: s.announceAr, visible: s.announceVisible }
     );
     showToast(t.saveSettingsAlert);
   };
@@ -424,6 +491,46 @@ export default function AdminPortal({
                 </div>
 
                 <div style={S.subsectionTitle}>
+                  <span>🔗</span> {t.socialTitle}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div style={S.inputGroup}>
+                    <label style={S.label}>{t.linkedinLabel}</label>
+                    <input style={S.input} type="url" value={settingsForm.linkedin}
+                      onChange={e => setSettingsForm({ ...settingsForm, linkedin: e.target.value })}
+                      onFocus={e => { e.target.style.borderColor = '#4c6cd0'; e.target.style.boxShadow = '0 0 0 3px rgba(76,108,208,0.12)'; }}
+                      onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+                      placeholder="https://linkedin.com/..." />
+                  </div>
+                  <div style={S.inputGroup}>
+                    <label style={S.label}>{t.instagramLabel}</label>
+                    <input style={S.input} type="url" value={settingsForm.instagram}
+                      onChange={e => setSettingsForm({ ...settingsForm, instagram: e.target.value })}
+                      onFocus={e => { e.target.style.borderColor = '#4c6cd0'; e.target.style.boxShadow = '0 0 0 3px rgba(76,108,208,0.12)'; }}
+                      onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+                      placeholder="https://instagram.com/..." />
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <div style={S.inputGroup}>
+                    <label style={S.label}>{t.youtubeLabel}</label>
+                    <input style={S.input} type="url" value={settingsForm.youtube}
+                      onChange={e => setSettingsForm({ ...settingsForm, youtube: e.target.value })}
+                      onFocus={e => { e.target.style.borderColor = '#4c6cd0'; e.target.style.boxShadow = '0 0 0 3px rgba(76,108,208,0.12)'; }}
+                      onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+                      placeholder="https://youtube.com/..." />
+                  </div>
+                  <div style={S.inputGroup}>
+                    <label style={S.label}>{t.whatsappLabel}</label>
+                    <input style={S.input} type="text" value={settingsForm.whatsapp}
+                      onChange={e => setSettingsForm({ ...settingsForm, whatsapp: e.target.value })}
+                      onFocus={e => { e.target.style.borderColor = '#4c6cd0'; e.target.style.boxShadow = '0 0 0 3px rgba(76,108,208,0.12)'; }}
+                      onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+                      placeholder="e.g. https://wa.me/... or phone number" />
+                  </div>
+                </div>
+
+                <div style={S.subsectionTitle}>
                   <span>📢</span> {t.announceTitle}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -564,13 +671,13 @@ export default function AdminPortal({
         {/* ══ TAB 4: Publishing ══ */}
         {activeTab === 'admin-publishing' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem' }}>
-            
+
             {/* Publisher Block */}
             <div style={S.card}>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1e293b', marginBottom: '1.5rem', paddingBottom: '0.75rem', borderBottom: '1.5px solid #f1f5f9' }}>
                 {lang === 'en' ? 'Publish New Article' : 'نشر مقال جديد'}
               </h3>
-              
+
               <form onSubmit={handlePublishSubmit}>
                 {/* Titles */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -609,7 +716,7 @@ export default function AdminPortal({
                     onChange={e => setPublishingForm({ ...publishingForm, contentEn: e.target.value })}
                     required />
                 </div>
-                
+
                 <div style={S.inputGroup}>
                   <label style={S.label}>{lang === 'en' ? 'Content (Arabic) *' : 'المحتوى (عربي) *'}</label>
                   <textarea style={{ ...S.input, minHeight: '120px', resize: 'vertical' }} value={publishingForm.contentAr}
@@ -671,7 +778,7 @@ export default function AdminPortal({
                     <h4 style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '0.8rem' }}>
                       {lang === 'en' ? 'Attachments Preview' : 'معاينة المرفقات'}
                     </h4>
-                    
+
                     {/* Cover Preview */}
                     {publishingForm.coverImage && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.8rem', background: '#ffffff', padding: '0.5rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
@@ -721,55 +828,148 @@ export default function AdminPortal({
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1e293b', marginBottom: '1.5rem', paddingBottom: '0.75rem', borderBottom: '1.5px solid #f1f5f9' }}>
                   {lang === 'en' ? 'Manage Articles' : 'إدارة المقالات'}
                 </h3>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '550px', overflowY: 'auto' }}>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '600px', overflowY: 'auto' }}>
                   {articles.length === 0 ? (
                     <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem', padding: '1.5rem' }}>
                       {lang === 'en' ? 'No articles published yet.' : 'لا توجد مقالات منشورة بعد.'}
                     </p>
                   ) : (
                     articles.map(art => (
-                      <div key={art.id} style={{ display: 'flex', gap: '0.8rem', padding: '0.8rem', border: '1px solid #f1f5f9', borderRadius: '12px', background: '#faf8f4', alignItems: 'center' }}>
-                        {art.coverImage ? (
-                          <img src={art.coverImage} alt="Article Mini Cover" style={{ width: '50px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />
-                        ) : (
-                          <div style={{ width: '50px', height: '40px', background: '#e2e8f0', borderRadius: '6px', display: 'flex', alignItems: 'center', justify: 'center', fontSize: '0.8rem' }}>📰</div>
-                        )}
-                        <div style={{ flexGrow: 1, minWidth: 0 }}>
-                          <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                            {lang === 'en' ? art.titleEn : art.titleAr}
-                          </h4>
-                          <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                            {art.date}
-                          </span>
+                      <div key={art.id} style={{ border: '1px solid #f1f5f9', borderRadius: '12px', overflow: 'hidden', background: '#faf8f4' }}>
+                        {/* Article Row */}
+                        <div style={{ display: 'flex', gap: '0.8rem', padding: '0.8rem', alignItems: 'center' }}>
+                          {art.coverImage ? (
+                            <img src={art.coverImage} alt="Article Mini Cover" style={{ width: '50px', height: '40px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} />
+                          ) : (
+                            <div style={{ width: '50px', height: '40px', background: '#e2e8f0', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>📰</div>
+                          )}
+                          <div style={{ flexGrow: 1, minWidth: 0 }}>
+                            <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                              {lang === 'en' ? art.titleEn : art.titleAr}
+                            </h4>
+                            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{art.date} · {lang === 'en' ? art.categoryEn : art.categoryAr}</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+                            <button
+                              onClick={() => handleEditStart(art)}
+                              style={{ background: '#e0e7ff', color: '#4c6cd0', border: 'none', padding: '0.35rem 0.6rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}
+                            >
+                              {lang === 'en' ? '✏️ Edit' : '✏️ تعديل'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                showConfirm(
+                                  lang === 'en' ? 'Are you sure you want to delete this article?' : 'هل أنت متأكد من رغبتك في حذف هذا المقال؟',
+                                  lang === 'en' ? 'Delete Article' : 'حذف المقال',
+                                  () => onDeleteArticle(art.id)
+                                );
+                              }}
+                              style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '0.35rem 0.6rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}
+                            >
+                              {lang === 'en' ? 'Delete' : 'حذف'}
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          onClick={() => {
-                            showConfirm(
-                              lang === 'en' ? 'Are you sure you want to delete this article?' : 'هل أنت متأكد من رغبتك في حذف هذا المقال؟',
-                              lang === 'en' ? 'Delete Article' : 'حذف المقال',
-                              () => onDeleteArticle(art.id)
-                            );
-                          }}
-                          style={{
-                            background: '#fee2e2',
-                            color: '#dc2626',
-                            border: 'none',
-                            padding: '0.35rem 0.6rem',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            fontSize: '0.72rem',
-                            fontWeight: 700
-                          }}
-                        >
-                          {lang === 'en' ? 'Delete' : 'حذف'}
-                        </button>
                       </div>
                     ))
                   )}
                 </div>
               </div>
             </div>
+
+            {/* Edit Article Modal */}
+            {editingArticle && (
+              <div className="modal-overlay" style={{ zIndex: 99999 }}>
+                <div className="modal-container" style={{ width: '100%', maxWidth: '650px', maxHeight: '90vh', overflowY: 'auto', padding: '2rem' }}>
+                  <button className="close-btn" onClick={() => setEditingArticle(null)}>&times;</button>
+                  
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1e293b', marginBottom: '1.5rem', paddingBottom: '0.75rem', borderBottom: '1.5px solid #f1f5f9' }}>
+                    {lang === 'en' ? 'Edit Article' : 'تعديل المقال'}
+                  </h3>
+
+                  <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {/* Titles */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div style={S.inputGroup}>
+                        <label style={S.label}>{lang === 'en' ? 'Title (English) *' : 'العنوان (إنجليزي) *'}</label>
+                        <input style={S.input} type="text"
+                          value={editingArticle.form.titleEn}
+                          onChange={e => setEditingArticle(p => ({ ...p, form: { ...p.form, titleEn: e.target.value } }))}
+                          required />
+                      </div>
+                      <div style={S.inputGroup}>
+                        <label style={S.label}>{lang === 'en' ? 'Title (Arabic) *' : 'العنوان (عربي) *'}</label>
+                        <input style={S.input} type="text"
+                          value={editingArticle.form.titleAr}
+                          onChange={e => setEditingArticle(p => ({ ...p, form: { ...p.form, titleAr: e.target.value } }))}
+                          required />
+                      </div>
+                    </div>
+
+                    {/* Categories */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div style={S.inputGroup}>
+                        <label style={S.label}>{lang === 'en' ? 'Category (English)' : 'الفئة (إنجليزي)'}</label>
+                        <input style={S.input} type="text"
+                          value={editingArticle.form.categoryEn}
+                          onChange={e => setEditingArticle(p => ({ ...p, form: { ...p.form, categoryEn: e.target.value } }))} />
+                      </div>
+                      <div style={S.inputGroup}>
+                        <label style={S.label}>{lang === 'en' ? 'Category (Arabic)' : 'الفئة (عربي)'}</label>
+                        <input style={S.input} type="text"
+                          value={editingArticle.form.categoryAr}
+                          onChange={e => setEditingArticle(p => ({ ...p, form: { ...p.form, categoryAr: e.target.value } }))} />
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div style={S.inputGroup}>
+                      <label style={S.label}>{lang === 'en' ? 'Content (English)' : 'المحتوى (إنجليزي)'}</label>
+                      <textarea style={{ ...S.input, minHeight: '120px', resize: 'vertical' }}
+                        value={editingArticle.form.contentEn}
+                        onChange={e => setEditingArticle(p => ({ ...p, form: { ...p.form, contentEn: e.target.value } }))} />
+                    </div>
+                    <div style={S.inputGroup}>
+                      <label style={S.label}>{lang === 'en' ? 'Content (Arabic)' : 'المحتوى (عربي)'}</label>
+                      <textarea style={{ ...S.input, minHeight: '120px', resize: 'vertical' }}
+                        value={editingArticle.form.contentAr}
+                        onChange={e => setEditingArticle(p => ({ ...p, form: { ...p.form, contentAr: e.target.value } }))} />
+                    </div>
+
+                    {/* Cover Image */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: '#faf8f4', padding: '0.8rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                      {editingArticle.form.coverImage && (
+                        <img src={editingArticle.form.coverImage} alt="cover" style={{ width: '80px', height: '50px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                      )}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                        <input type="file" id={`edit-cover-modal`} accept="image/*" onChange={handleEditCoverSelect} style={{ display: 'none' }} />
+                        <button type="button"
+                          onClick={() => document.getElementById(`edit-cover-modal`).click()}
+                          style={{ background: '#e0e7ff', color: '#4c6cd0', border: 'none', padding: '0.45rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700 }}
+                        >
+                          🖼️ {lang === 'en' ? 'Change Cover Image' : 'تغيير صورة الغلاف'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                      <button type="button" onClick={() => setEditingArticle(null)}
+                        style={{ background: '#f1f5f9', color: '#64748b', border: 'none', padding: '0.55rem 1.4rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}
+                      >
+                        {lang === 'en' ? 'Cancel' : 'إلغاء'}
+                      </button>
+                      <button type="submit"
+                        style={{ ...S.actionBtn, padding: '0.55rem 1.8rem', fontSize: '0.82rem', borderRadius: '8px' }}
+                      >
+                        {lang === 'en' ? 'Save Changes' : 'حفظ التغييرات'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
 
           </div>
         )}

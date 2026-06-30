@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Search, Scale, ListChecks, Target, ArrowLeft, ArrowRight } from 'lucide-react';
 
 function CheckIcon({ className }) {
   return (
@@ -231,7 +232,7 @@ export default function ServiceDetail({ serviceId, lang, onGoToHome, onServiceCl
           {/* What is it? */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200/40 shadow-sm">
             <div className="flex items-center gap-2.5 mb-3">
-              <span className="text-xl">🔍</span>
+              <Search className="w-5 h-5 text-[#ffc57e] shrink-0" />
               <h2 className="text-base font-bold text-slate-800 border-l-4 border-[#ffc57e] pl-2 rtl:border-l-0 rtl:border-r-4 rtl:pr-2 rtl:pl-0">
                 {lang === 'en' ? 'What is it?' : 'ما هي هذه الخدمة؟'}
               </h2>
@@ -244,7 +245,7 @@ export default function ServiceDetail({ serviceId, lang, onGoToHome, onServiceCl
           {/* Importance & Role */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200/40 shadow-sm">
             <div className="flex items-center gap-2.5 mb-3">
-              <span className="text-xl">⚖️</span>
+              <Scale className="w-5 h-5 text-[#ffc57e] shrink-0" />
               <h2 className="text-base font-bold text-slate-800 border-l-4 border-[#ffc57e] pl-2 rtl:border-l-0 rtl:border-r-4 rtl:pr-2 rtl:pl-0">
                 {lang === 'en' ? 'Importance & Role' : 'أهميتها ودورها'}
               </h2>
@@ -260,7 +261,7 @@ export default function ServiceDetail({ serviceId, lang, onGoToHome, onServiceCl
           {/* What We Do List */}
           <div>
             <h2 className="text-lg font-bold text-[#1e293b] mb-4 flex items-center gap-2">
-              <span>📋</span>
+              <ListChecks className="w-5 h-5 text-[#4c6cd0] shrink-0" />
               <span>{lang === 'en' ? 'What We Do' : 'ماذا نقدم'}</span>
             </h2>
             <div className="flex flex-col gap-2">
@@ -276,7 +277,7 @@ export default function ServiceDetail({ serviceId, lang, onGoToHome, onServiceCl
           {/* Your Outcome List */}
           <div>
             <h2 className="text-lg font-bold text-[#1e293b] mb-4 flex items-center gap-2">
-              <span>🎯</span>
+              <Target className="w-5 h-5 text-[#ffc57e] shrink-0" />
               <span>{lang === 'en' ? 'Your Outcome' : 'النتائج المحققة'}</span>
             </h2>
             <div className="flex flex-col gap-2">

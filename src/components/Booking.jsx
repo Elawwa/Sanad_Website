@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import PhoneInput from './PhoneInput';
 
 export default function Booking({ lang, onBookingSubmit }) {
   const [formData, setFormData] = useState({
@@ -8,6 +10,8 @@ export default function Booking({ lang, onBookingSubmit }) {
     brief: '',
     type: 'in-person'
   });
+
+  const [honeypot, setHoneypot] = useState('');
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -19,6 +23,11 @@ export default function Booking({ lang, onBookingSubmit }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (honeypot) {
+      // Pass isSpam: true if the honeypot field is filled by a bot
+      onBookingSubmit({ ...formData, isSpam: true });
+      return;
+    }
     onBookingSubmit({ ...formData });
   };
 
@@ -29,7 +38,7 @@ export default function Booking({ lang, onBookingSubmit }) {
     email: lang === 'en' ? 'Email Address' : 'البريد الإلكتروني',
     brief: lang === 'en' ? 'Consultation Brief' : 'نبذة عن الاستشارة',
     type: lang === 'en' ? 'Consultation Type' : 'نوع الاستشارة',
-    optionInPerson: lang === 'en' ? 'In-Person (Sharjah Office)' : 'حضورياً (مكتب الشارقة)',
+    optionInPerson: lang === 'en' ? 'In-Person' : 'حضورياً',
     optionOnline: lang === 'en' ? 'Online Meeting' : 'اجتماع عبر الإنترنت',
     optionText: lang === 'en' ? 'Written/Text Advisory' : 'استشارة مكتوبة',
     submitBtn: lang === 'en' ? 'Book Consultation' : 'احجز الاستشارة'
@@ -38,19 +47,51 @@ export default function Booking({ lang, onBookingSubmit }) {
   return (
     <section id="book" className="booking-section">
       <div className="container">
-        <div className="section-header reveal-on-scroll visible">
+        <motion.div
+          className="section-header"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.6 }}
+        >
           <h2>{t.header}</h2>
           <div className="line"></div>
-        </div>
-        <div className="form-container reveal-on-scroll visible">
+        </motion.div>
+
+        <motion.div
+          className="form-container"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        >
           <form id="booking-form" onSubmit={handleSubmit}>
+            {/* Anti-spam Honeypot field */}
+            <div style={{ display: 'none' }} aria-hidden="true">
+              <label htmlFor="website_hp">Do not fill this field</label>
+              <input
+                type="text"
+                id="website_hp"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex="-1"
+                autoComplete="off"
+              />
+            </div>
+
             <div className="input-group">
               <label htmlFor="name">{t.name}</label>
               <input type="text" id="name" value={formData.name} onChange={handleChange} required />
             </div>
             <div className="input-group">
               <label htmlFor="phone">{t.phone}</label>
-              <input type="tel" id="phone" value={formData.phone} onChange={handleChange} required />
+              <PhoneInput
+                id="phone"
+                value={formData.phone}
+                onChange={(val) => setFormData(prev => ({ ...prev, phone: val }))}
+                required
+                lang={lang}
+              />
             </div>
             <div className="input-group">
               <label htmlFor="email">{t.email}</label>
@@ -73,7 +114,7 @@ export default function Booking({ lang, onBookingSubmit }) {
               <button type="submit" className="btn-primary w-100">{t.submitBtn}</button>
             </div>
           </form>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

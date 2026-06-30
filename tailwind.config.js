@@ -13,8 +13,8 @@ export default {
         'cloud-white': '#faf8f4',
       },
       fontFamily: {
-        serif: ['"Source Serif 4"', '"Playfair Display"', 'Georgia', 'serif'],
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        serif: ['"Playfair Display"', '"Source Serif 4"', 'Georgia', 'serif'],
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
     },
   },

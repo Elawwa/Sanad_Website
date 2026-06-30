@@ -11,8 +11,8 @@
     --gray-orange: #4c6cd0;/* override old brown to brand blue */
     --cloud-white: #faf8f4; /* Cloud White — background */
     
-    --font-primary: 'Times New Roman', Times, serif;
-    --font-secondary: 'Source Serif Pro', serif;
+    --font-primary: 'Playfair Display', 'Source Serif 4', serif;
+    --font-secondary: 'Plus Jakarta Sans', 'Inter', sans-serif;
     --font-arabic: 'Cairo', sans-serif;
     
     --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -269,6 +269,7 @@ section {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: top center;
     transition: var(--transition-smooth);
 }
 
@@ -320,7 +321,113 @@ body.rtl .feature-item {
     color: #64748b;
 }
 
-/* Services Section */
+/* ─── Founder Profile (About Section) ─── */
+
+/* Flip grid to image-first on desktop */
+.about-grid {
+    grid-template-columns: 1fr 1.3fr;
+}
+
+/* Name badge overlay at the bottom of the founder photo */
+.founder-badge {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.2rem 1.5rem;
+    background: linear-gradient(to top, rgba(10, 20, 50, 0.92) 0%, transparent 100%);
+    text-align: left;
+}
+
+body.rtl .founder-badge { text-align: right; }
+
+.founder-badge-name {
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 0.2rem 0;
+    letter-spacing: 0.01em;
+}
+
+.founder-badge-title {
+    color: #ffc57e;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin: 0;
+    opacity: 0.95;
+}
+
+/* Small pill tag above the bio */
+.founder-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 100%);
+    color: var(--primary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.35rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(76, 108, 208, 0.2);
+    align-self: flex-start;
+}
+
+body.rtl .founder-tag { align-self: flex-end; }
+
+/* 2×2 grid of credential cards */
+.founder-credentials {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.credential-card {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem 1.2rem;
+    background: var(--cloud-white);
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    transition: var(--transition-smooth);
+}
+
+.credential-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-premium);
+    border-color: rgba(76, 108, 208, 0.25);
+}
+
+.credential-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #e0e7ff, #f0f4ff);
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.credential-label {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.15rem 0;
+}
+
+.credential-value {
+    font-size: 0.88rem;
+    color: var(--navy);
+    font-weight: 700;
+    margin: 0;
+}
+
+
 .services-section {
     background-color: var(--cloud-white);
 }
@@ -420,6 +527,60 @@ body.rtl .feature-item {
     border-color: var(--light-blue);
     background-color: white;
     box-shadow: 0 0 0 3px rgba(76, 108, 208, 0.15);
+}
+
+/* ─── Phone Input with Country Code ─── */
+/* ─── react-phone-number-input Custom Styling ─── */
+.custom-phone-input {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.custom-phone-input .PhoneInputCountry {
+    padding: 0 0.85rem;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-inline-end: none;
+    border-start-start-radius: 8px;
+    border-end-start-radius: 8px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    transition: background 0.2s ease;
+}
+
+.custom-phone-input .PhoneInputCountry:focus-within {
+    border-color: var(--light-blue);
+    background-color: white;
+}
+
+.custom-phone-input .PhoneInputInput {
+    flex: 1;
+    min-width: 0;
+    padding: 0.9rem 1.1rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    border: 1px solid #cbd5e1;
+    border-start-end-radius: 8px;
+    border-end-end-radius: 8px;
+    height: 48px;
+    background: white;
+    outline: none;
+    transition: var(--transition-smooth);
+    color: var(--navy);
+}
+
+.custom-phone-input:focus-within .PhoneInputInput {
+    border-color: var(--light-blue);
+    box-shadow: 0 0 0 3px rgba(76, 108, 208, 0.15);
+    z-index: 2;
+}
+
+.custom-phone-input .PhoneInputCountrySelectArrow {
+    border-color: #64748b;
+    opacity: 0.7;
+    margin-inline-start: 4px;
 }
 
 .payment-mockup {

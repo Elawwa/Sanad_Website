@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Admins can read and write everything
+    function isAdmin() {
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId || isAdmin();
+    }
+
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /announcements/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /articles/{articleId} {
+      allow read: if true;
+      // Articles can have large rich-text content, but we still put an absolute limit of ~50KB per field just to prevent abuse
+      allow write: if isAdmin() 
+                   && request.resource.data.titleEn.size() <= 300
+                   && request.resource.data.titleAr.size() <= 300
+                   && request.resource.data.contentEn.size() <= 50000
+                   && request.resource.data.contentAr.size() <= 50000;
+    }
+
+    match /bookings/{bookingId} {
+      allow read: if isAdmin();
+      // Public can create bookings, but we enforce strict size limits
+      allow create: if request.resource.data.name.size() > 0 
+                    && request.resource.data.name.size() <= 100
+                    && request.resource.data.email.size() <= 150
+                    && request.resource.data.phone.size() <= 30
+                    && request.resource.data.brief.size() <= 1500
+                    && request.resource.data.type.size() <= 50;
+      allow update, delete: if isAdmin();
+    }
+
+    match /contacts/{contactId} {
+      allow read: if isAdmin();
+      // Public can create contacts, but we enforce strict size limits
+      allow create: if request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() <= 100
+                    && request.resource.data.email.size() <= 150
+                    && request.resource.data.phone.size() <= 30
+                    && request.resource.data.message.size() <= 1500;
+      allow update, delete: if isAdmin();
+    }
+  }
+}

@@ -1,10 +1,8 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React from 'react';
+import { Carousel } from '@/components/ui/carousel';
+import { motion } from 'framer-motion';
 
 export default function Articles({ lang, articles, onArticleClick }) {
-  const scrollContainerRef = useRef(null);
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(true);
-
   const t = {
     title: lang === 'en' ? 'Latest Insights & Articles' : 'آخر المقالات والأخبار',
     subtitle: lang === 'en' ? 'Stay updated with recent business setups, tax advice, and corporate regulations in the UAE.' : 'تابع أحدث مستجدات تأسيس الشركات، واللوائح الضريبية، وحوكمة الأعمال في دولة الإمارات.',
@@ -12,52 +10,19 @@ export default function Articles({ lang, articles, onArticleClick }) {
     noArticles: lang === 'en' ? 'No articles published yet.' : 'لا توجد مقالات منشورة بعد.',
   };
 
-  const checkScrollLimits = () => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    
-    // In RTL, scrollLeft can be negative or positive depending on browser implementation,
-    // so we handle limits based on scrollWidth, clientWidth, and scrollLeft.
-    const scrollLeft = Math.abs(el.scrollLeft);
-    const maxScroll = el.scrollWidth - el.clientWidth;
-    
-    setShowLeftArrow(scrollLeft > 10);
-    setShowRightArrow(scrollLeft < maxScroll - 10);
-  };
-
-  useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (el) {
-      el.addEventListener('scroll', checkScrollLimits);
-      // Run initial check
-      checkScrollLimits();
-    }
-    return () => {
-      if (el) el.removeEventListener('scroll', checkScrollLimits);
-    };
-  }, [articles]);
-
-  const handleScroll = (direction) => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-
-    const scrollAmount = 350; // card width + gap
-    // Account for RTL direction
-    const isRtl = lang === 'ar';
-    const multiplier = isRtl ? (direction === 'left' ? 1 : -1) : (direction === 'left' ? -1 : 1);
-
-    el.scrollBy({
-      left: scrollAmount * multiplier,
-      behavior: 'smooth'
-    });
-  };
-
   if (!articles || articles.length === 0) {
     return null;
   }
 
   return (
-    <section id="articles" className="reveal-on-scroll py-16 px-6 bg-white border-t border-slate-100 select-none">
+    <motion.section 
+      id="articles" 
+      className="py-16 px-6 bg-white border-t border-slate-100 select-none"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+    >
       <div className="max-w-7xl mx-auto text-center mb-10">
         <h2 className="text-3xl md:text-4xl font-serif font-medium text-slate-800 mb-3 tracking-tight">
           {t.title}
@@ -68,31 +33,20 @@ export default function Articles({ lang, articles, onArticleClick }) {
         </p>
       </div>
 
-      <div className="relative max-w-5xl mx-auto group/carousel">
-        {/* Left Arrow Button */}
-        {showLeftArrow && (
-          <button
-            onClick={() => handleScroll('left')}
-            className="absolute left-[-20px] top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/95 border border-slate-200/50 shadow-md flex items-center justify-center text-slate-600 hover:text-[#4c6cd0] hover:border-[#4c6cd0]/30 transition-all select-none hover:scale-105 active:scale-95"
-            aria-label="Previous Articles"
-          >
-            <span className="text-lg font-bold">←</span>
-          </button>
-        )}
-
-        {/* Scrollable Carousel Wrapper */}
-        <div
-          ref={scrollContainerRef}
-          className="flex overflow-x-auto gap-6 pb-6 pt-2 scrollbar-none snap-x snap-mandatory scroll-smooth w-full"
-          style={{ WebkitOverflowScrolling: 'touch' }}
-        >
-          {articles.map((art) => {
+      <div className="relative max-w-5xl mx-auto">
+        <Carousel
+          options={{
+            align: 'start',
+            direction: lang === 'ar' ? 'rtl' : 'ltr',
+            loop: articles.length > 3,
+          }}
+          slides={articles.map((art) => {
             const hasCover = art.coverImage && art.coverImage.length > 0;
             return (
               <div
                 key={art.id}
                 onClick={() => onArticleClick(art.id)}
-                className="flex-shrink-0 w-[290px] sm:w-[320px] bg-[#faf8f4] border border-slate-200/40 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 snap-start cursor-pointer group flex flex-col justify-between"
+                className="w-full bg-[#faf8f4] border border-slate-200/40 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer group flex flex-col justify-between"
               >
                 <div>
                   {/* Card Banner Image */}
@@ -101,6 +55,7 @@ export default function Articles({ lang, articles, onArticleClick }) {
                       <img
                         src={art.coverImage}
                         alt={lang === 'en' ? art.titleEn : art.titleAr}
+                        loading="lazy"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
@@ -140,19 +95,8 @@ export default function Articles({ lang, articles, onArticleClick }) {
               </div>
             );
           })}
-        </div>
-
-        {/* Right Arrow Button */}
-        {showRightArrow && (
-          <button
-            onClick={() => handleScroll('right')}
-            className="absolute right-[-20px] top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/95 border border-slate-200/50 shadow-md flex items-center justify-center text-slate-600 hover:text-[#4c6cd0] hover:border-[#4c6cd0]/30 transition-all select-none hover:scale-105 active:scale-95"
-            aria-label="Next Articles"
-          >
-            <span className="text-lg font-bold">→</span>
-          </button>
-        )}
+        />
       </div>
-    </section>
+    </motion.section>
   );
 }

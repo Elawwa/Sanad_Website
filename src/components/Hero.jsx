@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { scrollToTarget } from '../utils/scroll';
 
 function CheckIcon({ className }) {
   return (
@@ -12,19 +13,7 @@ function CheckIcon({ className }) {
 export default function Hero({ lang, onBookClick, isAnnounceVisible = true }) {
   const handleScrollToServices = (e) => {
     e.preventDefault();
-    const target = document.querySelector('#services');
-    if (target) {
-      const offset = 120;
-      const bodyRect = document.body.getBoundingClientRect().top;
-      const elementRect = target.getBoundingClientRect().top;
-      const elementPosition = elementRect - bodyRect;
-      const offsetPosition = elementPosition - offset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-    }
+    scrollToTarget('#services', 120);
   };
 
   const t = {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ChevronDown, Globe } from 'lucide-react';
+import { scrollToTarget } from '../utils/scroll';
 
 
 export default function Header({ lang, portal, onPortalChange, onLangToggle, onPortalTriggerClick, onServiceClick, isAnnounceVisible = true }) {
@@ -51,14 +52,7 @@ export default function Header({ lang, portal, onPortalChange, onLangToggle, onP
     onPortalChange('client');
     setIsMenuOpen(false);
     setTimeout(() => {
-      const target = document.querySelector(hash);
-      if (target) {
-        const offset = isAnnounceVisible ? 120 : 80; // header height + ticker height
-        const bodyRect = document.body.getBoundingClientRect().top;
-        const elementRect = target.getBoundingClientRect().top;
-        const offsetPosition = elementRect - bodyRect - offset;
-        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-      }
+      scrollToTarget(hash, isAnnounceVisible ? 120 : 80);
     }, 50);
   };
 
@@ -117,10 +111,10 @@ export default function Header({ lang, portal, onPortalChange, onLangToggle, onP
                   e.preventDefault();
                   setIsServicesDropdownOpen(!isServicesDropdownOpen);
                 }}
-                className="px-4 py-1.5 text-xs font-bold text-slate-600 hover:text-[#4c6cd0] hover:bg-white rounded-full transition-all duration-300 select-none hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex items-center gap-1"
+                className="px-4 py-1.5 text-xs font-bold text-slate-600 hover:text-[#4c6cd0] hover:bg-white rounded-full transition-all duration-300 select-none hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex items-center gap-1 group"
               >
                 <span>{t.services}</span>
-                <span className="text-[9px] opacity-60">▼</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isServicesDropdownOpen ? 'rotate-180' : ''} text-slate-500 group-hover:text-[#4c6cd0]`} />
               </button>
 
               {isServicesDropdownOpen && (
@@ -194,7 +188,7 @@ export default function Header({ lang, portal, onPortalChange, onLangToggle, onP
               onClick={onLangToggle}
               className="px-4 py-1.5 text-xs font-bold text-slate-600 hover:text-[#4c6cd0] hover:bg-white rounded-full transition-all duration-300 select-none hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex items-center gap-1.5"
             >
-              <span>🇦🇪</span>
+              <Globe className="w-3.5 h-3.5 text-slate-500" />
               <span>{t.langBtn}</span>
             </button>
           </div>
@@ -258,7 +252,7 @@ export default function Header({ lang, portal, onPortalChange, onLangToggle, onP
                 className="w-full text-center py-2 text-xs font-bold text-slate-600 hover:text-[#4c6cd0] hover:bg-white rounded-full transition-all duration-300 hover:shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex items-center justify-center gap-1"
               >
                 <span>{t.services}</span>
-                <span className="text-[9px] opacity-60">{isMobileServicesOpen ? '▲' : '▼'}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isMobileServicesOpen ? 'rotate-180' : ''} text-slate-500`} />
               </button>
               {isMobileServicesOpen && (
                 <div className="flex flex-col gap-1.5 mt-2 bg-white border border-slate-200/50 p-3 rounded-2xl w-[90%] text-center shadow-md">
@@ -321,9 +315,9 @@ export default function Header({ lang, portal, onPortalChange, onLangToggle, onP
             </a>
             <button
               onClick={() => { onLangToggle(); setIsMenuOpen(false); }}
-              className="w-full py-2.5 text-xs font-bold text-slate-600 hover:text-[#4c6cd0] hover:bg-white bg-slate-100/60 border border-slate-200/50 rounded-full transition-all duration-300 flex items-center justify-center gap-1"
+              className="w-full py-2.5 text-xs font-bold text-slate-600 hover:text-[#4c6cd0] hover:bg-white bg-slate-100/60 border border-slate-200/50 rounded-full transition-all duration-300 flex items-center justify-center gap-1.5"
             >
-              <span>🇦🇪</span>
+              <Globe className="w-3.5 h-3.5 text-slate-500" />
               <span>{t.langBtn}</span>
             </button>
           </div>
