@@ -112,7 +112,7 @@ export default function Contact({ lang, siteSettings, onContactSubmit }) {
             <div>
               <span className="contact-icon"><PhoneCall className="w-8 h-8 text-[#ffc57e] mx-auto" /></span>
               <h4>{t.phoneTitle}</h4>
-              <p>{siteSettings.phone}</p>
+              <p><span dir="ltr">{siteSettings.phone}</span></p>
               <p>{siteSettings.email}</p>
             </div>
             

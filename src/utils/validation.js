@@ -9,18 +9,51 @@ export const stripHtml = (text) => {
   return text.replace(/<[^>]*>?/gm, '').trim();
 };
 
+const DISPOSABLE_DOMAINS = [
+  'yopmail.com', 'mailinator.com', 'tempmail.com', 'dispostable.com', 
+  'guerrillamail.com', 'sharklasers.com', '10minutemail.com', 'getnada.com',
+  'boun.cr', 'trashmail.com'
+];
+
 export const isValidEmail = (email) => {
+  if (!email) return { valid: false, reason: 'required' };
+  const emailStr = String(email).toLowerCase().trim();
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(String(email).toLowerCase());
+  if (!re.test(emailStr)) return { valid: false, reason: 'format' };
+  
+  const domain = emailStr.split('@')[1];
+  if (DISPOSABLE_DOMAINS.includes(domain)) {
+    return { valid: false, reason: 'disposable' };
+  }
+  return { valid: true };
 };
 
 export const isValidPhone = (phone) => {
-  if (!phone) return false;
+  if (!phone) return { valid: false, reason: 'required' };
   try {
-    return isValidPhoneNumber(phone);
+    if (!isValidPhoneNumber(phone)) {
+      return { valid: false, reason: 'format' };
+    }
   } catch (e) {
-    return false;
+    return { valid: false, reason: 'format' };
   }
+
+  // Filter out obvious fake/spam phone number patterns
+  const digitsOnly = phone.replace(/\D/g, '');
+  if (digitsOnly.length > 5) {
+    // E.g., repeating digits like "9710000000" (excluding country code)
+    const localPart = digitsOnly.slice(3); // skip country code roughly
+    const uniqueDigits = new Set(localPart);
+    if (uniqueDigits.size <= 1 && localPart.length >= 6) {
+      return { valid: false, reason: 'suspicious' };
+    }
+    // E.g. sequential digits
+    if (localPart.includes('1234567') || localPart.includes('9876543')) {
+      return { valid: false, reason: 'suspicious' };
+    }
+  }
+
+  return { valid: true };
 };
 
 export const sanitizeAndValidateContact = (data) => {
@@ -35,16 +68,26 @@ export const sanitizeAndValidateContact = (data) => {
     sanitized.name = stripHtml(data.name);
   }
 
-  if (!data.email || !isValidEmail(data.email)) {
-    errors.push('A valid email address is required.');
+  const emailCheck = isValidEmail(data.email);
+  if (!emailCheck.valid) {
+    if (emailCheck.reason === 'disposable') {
+      errors.push('Temporary or disposable email addresses are not allowed.');
+    } else {
+      errors.push('A valid email address is required.');
+    }
   } else if (data.email.length > 150) {
     errors.push('Email cannot exceed 150 characters.');
   } else {
-    sanitized.email = data.email.trim();
+    sanitized.email = data.email.trim().toLowerCase();
   }
 
-  if (!data.phone || !isValidPhone(data.phone)) {
-    errors.push('A valid phone number is required.');
+  const phoneCheck = isValidPhone(data.phone);
+  if (!phoneCheck.valid) {
+    if (phoneCheck.reason === 'suspicious') {
+      errors.push('Please enter a genuine phone number.');
+    } else {
+      errors.push('A valid international phone number is required.');
+    }
   } else if (data.phone.length > 20) {
     errors.push('Phone number cannot exceed 20 characters.');
   } else {
@@ -74,16 +117,26 @@ export const sanitizeAndValidateBooking = (data) => {
     sanitized.name = stripHtml(data.name);
   }
 
-  if (!data.email || !isValidEmail(data.email)) {
-    errors.push('A valid email address is required.');
+  const emailCheck = isValidEmail(data.email);
+  if (!emailCheck.valid) {
+    if (emailCheck.reason === 'disposable') {
+      errors.push('Temporary or disposable email addresses are not allowed.');
+    } else {
+      errors.push('A valid email address is required.');
+    }
   } else if (data.email.length > 150) {
     errors.push('Email cannot exceed 150 characters.');
   } else {
-    sanitized.email = data.email.trim();
+    sanitized.email = data.email.trim().toLowerCase();
   }
 
-  if (!data.phone || !isValidPhone(data.phone)) {
-    errors.push('A valid phone number is required.');
+  const phoneCheck = isValidPhone(data.phone);
+  if (!phoneCheck.valid) {
+    if (phoneCheck.reason === 'suspicious') {
+      errors.push('Please enter a genuine phone number.');
+    } else {
+      errors.push('A valid international phone number is required.');
+    }
   } else if (data.phone.length > 20) {
     errors.push('Phone number cannot exceed 20 characters.');
   } else {
@@ -125,8 +178,6 @@ export const validateAdminArticle = (data) => {
 
   checkString('titleEn', 200);
   checkString('titleAr', 200);
-  checkString('categoryEn', 100);
-  checkString('categoryAr', 100);
   
   if (!data.contentEn || data.contentEn.length < 10) errors.push('English content is required.');
   else if (data.contentEn.length > 50000) errors.push('English content is too long (max 50000 chars).');

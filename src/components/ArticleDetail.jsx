@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Video, Paperclip, FileText, Download, ArrowLeft, ArrowRight } from 'lucide-react';
 
-export default function ArticleDetail({ article, lang, onGoToHome, articles, onArticleClick }) {
+export default function ArticleDetail({ article, lang, onGoToHome, articles, onArticleClick, isAnnounceVisible = true }) {
   if (!article) return null;
 
   const hasCover = article.coverImage && article.coverImage.length > 0;
@@ -32,18 +32,15 @@ export default function ArticleDetail({ article, lang, onGoToHome, articles, onA
   };
 
   return (
-    <div className="bg-[#faf8f4] min-h-screen pt-[72px] font-sans text-slate-800" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className={`bg-[#faf8f4] min-h-screen ${isAnnounceVisible ? 'pt-[108px]' : 'pt-[72px]'} font-sans text-slate-800`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* ── Article Banner Header ── */}
       <div className="bg-gradient-to-br from-[#0f172a] via-[#1e2e6b] to-[#4c6cd0] text-white py-16 px-6 select-none">
         <div className="max-w-4xl mx-auto text-center md:text-left">
-          <span className="text-[10px] font-extrabold tracking-[0.2em] text-[#ffc57e] uppercase mb-3 block">
-            {lang === 'en' ? article.categoryEn : article.categoryAr}
-          </span>
           <h1 className="text-3xl md:text-5xl font-serif font-medium tracking-tight mb-4 leading-tight">
             {lang === 'en' ? article.titleEn : article.titleAr}
           </h1>
           <div className="flex items-center gap-4 justify-center md:justify-start text-slate-300 text-xs mt-2">
-            <span>{article.date}</span>
+            <span><span dir="ltr">{article.date}</span></span>
             <span className="w-1.5 h-1.5 rounded-full bg-white/20" />
             <span>{t.by}</span>
           </div>
@@ -176,13 +173,10 @@ export default function ArticleDetail({ article, lang, onGoToHome, articles, onA
                       onClick={() => onArticleClick(art.id)}
                       className="cursor-pointer group flex flex-col gap-1.5"
                     >
-                      <span className="text-[9px] font-extrabold uppercase text-[#4c6cd0] tracking-wider">
-                        {lang === 'en' ? art.categoryEn : art.categoryAr}
-                      </span>
                       <h4 className="text-xs font-bold text-slate-700 leading-snug group-hover:text-[#4c6cd0] transition-colors line-clamp-2">
                         {lang === 'en' ? art.titleEn : art.titleAr}
                       </h4>
-                      <span className="text-[10px] text-slate-400">{art.date}</span>
+                      <span className="text-[10px] text-slate-400"><span dir="ltr">{art.date}</span></span>
                     </div>
                   ))}
                 </div>

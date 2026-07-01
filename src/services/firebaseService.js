@@ -124,8 +124,6 @@ export const createArticle = async (article) => {
   const cleanArticle = {
     titleEn: article.titleEn || '',
     titleAr: article.titleAr || '',
-    categoryEn: article.categoryEn || 'General',
-    categoryAr: article.categoryAr || 'عام',
     contentEn: article.contentEn || '',
     contentAr: article.contentAr || '',
     coverImage: article.coverImage || '/sanad_hero_symbol.png',
@@ -142,8 +140,6 @@ export const updateArticle = async (id, article) => {
   const updateData = {};
   if (article.titleEn !== undefined) updateData.titleEn = article.titleEn;
   if (article.titleAr !== undefined) updateData.titleAr = article.titleAr;
-  if (article.categoryEn !== undefined) updateData.categoryEn = article.categoryEn;
-  if (article.categoryAr !== undefined) updateData.categoryAr = article.categoryAr;
   if (article.contentEn !== undefined) updateData.contentEn = article.contentEn;
   if (article.contentAr !== undefined) updateData.contentAr = article.contentAr;
   if (article.coverImage !== undefined) updateData.coverImage = article.coverImage;

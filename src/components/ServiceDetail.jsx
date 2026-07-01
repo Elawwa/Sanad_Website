@@ -10,7 +10,7 @@ function CheckIcon({ className }) {
   );
 }
 
-export default function ServiceDetail({ serviceId, lang, onGoToHome, onServiceClick }) {
+export default function ServiceDetail({ serviceId, lang, onGoToHome, onServiceClick, isAnnounceVisible = true }) {
   const servicesData = {
     setup: {
       titleEn: 'Corporate Setup & Licensing',
@@ -183,7 +183,7 @@ export default function ServiceDetail({ serviceId, lang, onGoToHome, onServiceCl
   const otherServices = Object.keys(servicesData).filter(id => id !== serviceId);
 
   return (
-    <div className="bg-[#faf8f4] min-h-screen pt-[72px] font-sans text-slate-800" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className={`bg-[#faf8f4] min-h-screen ${isAnnounceVisible ? 'pt-[108px]' : 'pt-[72px]'} font-sans text-slate-800`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* ── Hero Banner ── */}
       <div className="bg-gradient-to-br from-[#0f172a] via-[#1e2e6b] to-[#4c6cd0] text-white py-16 px-6 select-none">
         <div className="max-w-4xl mx-auto text-center md:text-left">

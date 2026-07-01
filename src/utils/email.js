@@ -58,34 +58,49 @@ export const sendBookingEmails = async (bookingData) => {
 };
 
 /**
- * Sends contact emails (Admin notification + Client auto-responder)
+ * Sends contact emails:
+ * 1. Admin notification via Web3Forms (directly to admin inbox)
+ * 2. Client auto-responder via EmailJS (if VITE_EMAILJS_TEMPLATE_CLIENT_CONTACT is set)
  */
 export const sendContactEmails = async (contactData) => {
-  if (!isConfigured()) {
-    console.warn('EmailJS is not fully configured. Skipping contact emails. Please set VITE_EMAILJS_SERVICE_ID and VITE_EMAILJS_PUBLIC_KEY in your .env file.');
-    return;
-  }
-
-  const adminTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ADMIN_CONTACT;
-  const clientTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_CLIENT_CONTACT;
-
-  // 1. Send Admin Notification
-  if (adminTemplateId) {
+  // 1. Send Admin Notification via Web3Forms
+  const accessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
+  if (accessKey) {
     try {
-      await emailjs.send(serviceId, adminTemplateId, {
-        name: contactData.name,
-        email: contactData.email,
-        phone: contactData.phone,
-        message: contactData.message,
-      }, publicKey);
-      console.log('EmailJS: Admin contact notification sent successfully');
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          access_key: accessKey,
+          from_name: 'Sanad Consulting Website',
+          subject: `New Contact Message from ${contactData.name}`,
+          name: contactData.name,
+          email: contactData.email,
+          phone: contactData.phone,
+          message: contactData.message
+        })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        console.log('Web3Forms: Email notification sent successfully to Admin.');
+      } else {
+        console.error('Web3Forms: API returned failure:', result.message || result);
+      }
     } catch (error) {
-      console.error('EmailJS: Failed to send admin contact notification:', error);
+      console.error('Web3Forms: Error submitting contact form to Web3Forms:', error);
     }
+  } else {
+    console.warn('Web3Forms access key is not configured. Skipping Admin email notification.');
   }
 
-  // 2. Send Client Auto-responder
-  if (clientTemplateId) {
+  // 2. Send Client Auto-responder via EmailJS
+  const clientTemplateId = import.meta.env.VITE_EMAILJS_TEMPLATE_CLIENT_CONTACT;
+  
+  if (isConfigured() && clientTemplateId) {
     try {
       await emailjs.send(serviceId, clientTemplateId, {
         to_name: contactData.name,
@@ -95,5 +110,7 @@ export const sendContactEmails = async (contactData) => {
     } catch (error) {
       console.error('EmailJS: Failed to send client contact auto-responder:', error);
     }
+  } else {
+    console.warn('EmailJS is not fully configured for Contact auto-responder. Skipping Client email.');
   }
 };

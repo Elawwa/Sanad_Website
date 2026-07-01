@@ -569,6 +569,8 @@ body.rtl .founder-tag { align-self: flex-end; }
     outline: none;
     transition: var(--transition-smooth);
     color: var(--navy);
+    direction: ltr;
+    text-align: left;
 }
 
 .custom-phone-input:focus-within .PhoneInputInput {

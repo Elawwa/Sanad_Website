@@ -2,6 +2,56 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { validateAdminArticle, sanitizeAndValidateSettings } from '../utils/validation';
 
+const translateText = async (text, fromLang = 'ar', toLang = 'en') => {
+  if (!text || text.trim().length === 0) return '';
+  
+  try {
+    const paragraphs = text.split('\n');
+    const translatedParagraphs = [];
+
+    for (const para of paragraphs) {
+      if (para.trim().length === 0) {
+        translatedParagraphs.push('');
+        continue;
+      }
+
+      // Chunk long paragraphs by sentences to stay under the 500-character limit per API call
+      const chunks = [];
+      let currentChunk = '';
+      const sentences = para.match(/[^.!?]+[.!?]*/g) || [para];
+
+      for (const sentence of sentences) {
+        if ((currentChunk + sentence).length > 400) {
+          if (currentChunk) chunks.push(currentChunk);
+          currentChunk = sentence;
+        } else {
+          currentChunk += sentence;
+        }
+      }
+      if (currentChunk) chunks.push(currentChunk);
+
+      // Translate chunks in parallel for this paragraph
+      const translatedChunks = await Promise.all(
+        chunks.map(async (chunk) => {
+          const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=${fromLang}|${toLang}`);
+          const data = await res.json();
+          if (data?.responseData?.translatedText) {
+            return data.responseData.translatedText;
+          }
+          throw new Error('Segment translation failed');
+        })
+      );
+
+      translatedParagraphs.push(translatedChunks.join(''));
+    }
+
+    return translatedParagraphs.join('\n');
+  } catch (err) {
+    console.error('Translation error:', err);
+    throw err;
+  }
+};
+
 
 // Stat Card component
 function StatCard({ label, value, accent = '#4c6cd0' }) {
@@ -80,8 +130,7 @@ export default function AdminPortal({
   const [publishingForm, setPublishingForm] = useState({
     titleEn: '',
     titleAr: '',
-    categoryEn: 'General',
-    categoryAr: 'عام',
+
     contentEn: '',
     contentAr: '',
     coverImage: '',
@@ -165,8 +214,7 @@ export default function AdminPortal({
     setPublishingForm({
       titleEn: '',
       titleAr: '',
-      categoryEn: 'General',
-      categoryAr: 'عام',
+
       contentEn: '',
       contentAr: '',
       coverImage: '',
@@ -182,8 +230,7 @@ export default function AdminPortal({
       form: {
         titleEn: art.titleEn || '',
         titleAr: art.titleAr || '',
-        categoryEn: art.categoryEn || 'General',
-        categoryAr: art.categoryAr || 'عام',
+
         contentEn: art.contentEn || '',
         contentAr: art.contentAr || '',
         coverImage: art.coverImage || '',
@@ -473,7 +520,26 @@ export default function AdminPortal({
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div style={S.inputGroup}>
-                    <label style={S.label}>{t.hoursEnLabel}</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={S.label}>{t.hoursEnLabel}</label>
+                      {settingsForm.hoursAr && (
+                        <button 
+                          type="button" 
+                          onClick={async () => {
+                            try {
+                              const trans = await translateText(settingsForm.hoursAr);
+                              setSettingsForm(prev => ({ ...prev, hoursEn: trans }));
+                              showToast(lang === 'en' ? 'Translated successfully!' : 'تمت الترجمة بنجاح!', 'success');
+                            } catch (e) {
+                              showToast(lang === 'en' ? 'Translation failed.' : 'فشلت الترجمة.', 'error');
+                            }
+                          }} 
+                          style={{ fontSize: '0.7rem', color: '#4c6cd0', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 'bold' }}
+                        >
+                          {lang === 'en' ? '✨ Auto-translate' : '✨ ترجمة تلقائية'}
+                        </button>
+                      )}
+                    </div>
                     <input style={S.input} type="text" value={settingsForm.hoursEn}
                       onChange={e => setSettingsForm({ ...settingsForm, hoursEn: e.target.value })}
                       onFocus={e => { e.target.style.borderColor = '#4c6cd0'; e.target.style.boxShadow = '0 0 0 3px rgba(76,108,208,0.12)'; }}
@@ -535,7 +601,26 @@ export default function AdminPortal({
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div style={S.inputGroup}>
-                    <label style={S.label}>{t.announceEnLabel}</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={S.label}>{t.announceEnLabel}</label>
+                      {settingsForm.announceAr && (
+                        <button 
+                          type="button" 
+                          onClick={async () => {
+                            try {
+                              const trans = await translateText(settingsForm.announceAr);
+                              setSettingsForm(prev => ({ ...prev, announceEn: trans }));
+                              showToast(lang === 'en' ? 'Translated successfully!' : 'تمت الترجمة بنجاح!', 'success');
+                            } catch (e) {
+                              showToast(lang === 'en' ? 'Translation failed.' : 'فشلت الترجمة.', 'error');
+                            }
+                          }} 
+                          style={{ fontSize: '0.7rem', color: '#4c6cd0', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 'bold' }}
+                        >
+                          {lang === 'en' ? '✨ Auto-translate' : '✨ ترجمة تلقائية'}
+                        </button>
+                      )}
+                    </div>
                     <input style={S.input} type="text" value={settingsForm.announceEn}
                       onChange={e => setSettingsForm({ ...settingsForm, announceEn: e.target.value })}
                       onFocus={e => { e.target.style.borderColor = '#4c6cd0'; e.target.style.boxShadow = '0 0 0 3px rgba(76,108,208,0.12)'; }}
@@ -682,7 +767,26 @@ export default function AdminPortal({
                 {/* Titles */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                   <div style={S.inputGroup}>
-                    <label style={S.label}>{lang === 'en' ? 'Title (English) *' : 'العنوان (إنجليزي) *'}</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label style={S.label}>{lang === 'en' ? 'Title (English) *' : 'العنوان (إنجليزي) *'}</label>
+                      {publishingForm.titleAr && (
+                        <button 
+                          type="button" 
+                          onClick={async () => {
+                            try {
+                              const trans = await translateText(publishingForm.titleAr);
+                              setPublishingForm(prev => ({ ...prev, titleEn: trans }));
+                              showToast(lang === 'en' ? 'Translated successfully!' : 'تمت الترجمة بنجاح!', 'success');
+                            } catch (e) {
+                              showToast(lang === 'en' ? 'Translation failed.' : 'فشلت الترجمة.', 'error');
+                            }
+                          }} 
+                          style={{ fontSize: '0.7rem', color: '#4c6cd0', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 'bold' }}
+                        >
+                          {lang === 'en' ? '✨ Auto-translate from Arabic' : '✨ ترجمة تلقائية من العربية'}
+                        </button>
+                      )}
+                    </div>
                     <input style={S.input} type="text" value={publishingForm.titleEn}
                       onChange={e => setPublishingForm({ ...publishingForm, titleEn: e.target.value })}
                       required />
@@ -695,23 +799,30 @@ export default function AdminPortal({
                   </div>
                 </div>
 
-                {/* Categories */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div style={S.inputGroup}>
-                    <label style={S.label}>{lang === 'en' ? 'Category (English)' : 'الفئة (إنجليزي)'}</label>
-                    <input style={S.input} type="text" value={publishingForm.categoryEn}
-                      onChange={e => setPublishingForm({ ...publishingForm, categoryEn: e.target.value })} />
-                  </div>
-                  <div style={S.inputGroup}>
-                    <label style={S.label}>{lang === 'en' ? 'Category (Arabic)' : 'الفئة (عربي)'}</label>
-                    <input style={S.input} type="text" value={publishingForm.categoryAr}
-                      onChange={e => setPublishingForm({ ...publishingForm, categoryAr: e.target.value })} />
-                  </div>
-                </div>
+
 
                 {/* Contents */}
                 <div style={S.inputGroup}>
-                  <label style={S.label}>{lang === 'en' ? 'Content (English) *' : 'المحتوى (إنجليزي) *'}</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={S.label}>{lang === 'en' ? 'Content (English) *' : 'المحتوى (إنجليزي) *'}</label>
+                    {publishingForm.contentAr && (
+                      <button 
+                        type="button" 
+                        onClick={async () => {
+                          try {
+                            const trans = await translateText(publishingForm.contentAr);
+                            setPublishingForm(prev => ({ ...prev, contentEn: trans }));
+                            showToast(lang === 'en' ? 'Translated successfully!' : 'تمت الترجمة بنجاح!', 'success');
+                          } catch (e) {
+                            showToast(lang === 'en' ? 'Translation failed.' : 'فشلت الترجمة.', 'error');
+                          }
+                        }} 
+                        style={{ fontSize: '0.7rem', color: '#4c6cd0', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 'bold' }}
+                      >
+                        {lang === 'en' ? '✨ Auto-translate from Arabic' : '✨ ترجمة تلقائية من العربية'}
+                      </button>
+                    )}
+                  </div>
                   <textarea style={{ ...S.input, minHeight: '120px', resize: 'vertical' }} value={publishingForm.contentEn}
                     onChange={e => setPublishingForm({ ...publishingForm, contentEn: e.target.value })}
                     required />
@@ -848,7 +959,7 @@ export default function AdminPortal({
                             <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                               {lang === 'en' ? art.titleEn : art.titleAr}
                             </h4>
-                            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{art.date} · {lang === 'en' ? art.categoryEn : art.categoryAr}</span>
+                            <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{art.date}</span>
                           </div>
                           <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
                             <button
@@ -892,7 +1003,26 @@ export default function AdminPortal({
                     {/* Titles */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                       <div style={S.inputGroup}>
-                        <label style={S.label}>{lang === 'en' ? 'Title (English) *' : 'العنوان (إنجليزي) *'}</label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <label style={S.label}>{lang === 'en' ? 'Title (English) *' : 'العنوان (إنجليزي) *'}</label>
+                          {editingArticle.form.titleAr && (
+                            <button 
+                              type="button" 
+                              onClick={async () => {
+                                try {
+                                  const trans = await translateText(editingArticle.form.titleAr);
+                                  setEditingArticle(p => ({ ...p, form: { ...p.form, titleEn: trans } }));
+                                  showToast(lang === 'en' ? 'Translated successfully!' : 'تمت الترجمة بنجاح!', 'success');
+                                } catch (e) {
+                                  showToast(lang === 'en' ? 'Translation failed.' : 'فشلت الترجمة.', 'error');
+                                }
+                              }} 
+                              style={{ fontSize: '0.7rem', color: '#4c6cd0', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 'bold' }}
+                            >
+                              {lang === 'en' ? '✨ Auto-translate from Arabic' : '✨ ترجمة تلقائية من العربية'}
+                            </button>
+                          )}
+                        </div>
                         <input style={S.input} type="text"
                           value={editingArticle.form.titleEn}
                           onChange={e => setEditingArticle(p => ({ ...p, form: { ...p.form, titleEn: e.target.value } }))}
@@ -907,25 +1037,30 @@ export default function AdminPortal({
                       </div>
                     </div>
 
-                    {/* Categories */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <div style={S.inputGroup}>
-                        <label style={S.label}>{lang === 'en' ? 'Category (English)' : 'الفئة (إنجليزي)'}</label>
-                        <input style={S.input} type="text"
-                          value={editingArticle.form.categoryEn}
-                          onChange={e => setEditingArticle(p => ({ ...p, form: { ...p.form, categoryEn: e.target.value } }))} />
-                      </div>
-                      <div style={S.inputGroup}>
-                        <label style={S.label}>{lang === 'en' ? 'Category (Arabic)' : 'الفئة (عربي)'}</label>
-                        <input style={S.input} type="text"
-                          value={editingArticle.form.categoryAr}
-                          onChange={e => setEditingArticle(p => ({ ...p, form: { ...p.form, categoryAr: e.target.value } }))} />
-                      </div>
-                    </div>
+
 
                     {/* Content */}
                     <div style={S.inputGroup}>
-                      <label style={S.label}>{lang === 'en' ? 'Content (English)' : 'المحتوى (إنجليزي)'}</label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label style={S.label}>{lang === 'en' ? 'Content (English)' : 'المحتوى (إنجليزي)'}</label>
+                        {editingArticle.form.contentAr && (
+                          <button 
+                            type="button" 
+                            onClick={async () => {
+                              try {
+                                const trans = await translateText(editingArticle.form.contentAr);
+                                setEditingArticle(p => ({ ...p, form: { ...p.form, contentEn: trans } }));
+                                showToast(lang === 'en' ? 'Translated successfully!' : 'تمت الترجمة بنجاح!', 'success');
+                              } catch (e) {
+                                showToast(lang === 'en' ? 'Translation failed.' : 'فشلت الترجمة.', 'error');
+                              }
+                            }} 
+                            style={{ fontSize: '0.7rem', color: '#4c6cd0', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 'bold' }}
+                          >
+                            {lang === 'en' ? '✨ Auto-translate from Arabic' : '✨ ترجمة تلقائية من العربية'}
+                          </button>
+                        )}
+                      </div>
                       <textarea style={{ ...S.input, minHeight: '120px', resize: 'vertical' }}
                         value={editingArticle.form.contentEn}
                         onChange={e => setEditingArticle(p => ({ ...p, form: { ...p.form, contentEn: e.target.value } }))} />

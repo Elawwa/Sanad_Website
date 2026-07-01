@@ -62,8 +62,6 @@ const defaultArticles = [
   {
     titleEn: "Navigating the New UAE Corporate Tax Regime",
     titleAr: "فهم نظام ضريبة الشركات الجديد في دولة الإمارات",
-    categoryEn: "Tax Advisory",
-    categoryAr: "الاستشارات الضريبية",
     contentEn: "The UAE Federal Tax Authority has introduced a corporate tax rate of 9% for taxable income exceeding AED 375,000. Business owners must structure their operations properly to benefit from small business relief and free zone exemptions. Keeping proper books of accounts is now mandatory for compliance.",
     contentAr: "أعلنت الهيئة الاتحادية للضرائب عن بدء تطبيق ضريبة الشركات بنسبة 9% على الدخل الخاضع للضريبة الذي يتجاوز 375,000 درهم إماراتي. يجب على أصحاب الأعمال هيكلة عملياتهم بشكل صحيح للاستفادة من تسهيلات الأعمال الصغيرة والإعفاءات المتاحة للمناطق الحرة. أصبح الاحتفاظ بدفاتر حسابات دقيقة أمراً إلزامياً للامتثال القانوني.",
     coverImage: "/sanad_about_office.png",
@@ -644,6 +642,7 @@ export default function App() {
         <ServiceDetail
           serviceId={selectedServiceId}
           lang={lang}
+          isAnnounceVisible={isAnnounceVisible}
           onGoToHome={() => {
             if (window.history.state && window.history.state.view === 'service-detail') {
               window.history.back();
@@ -660,6 +659,7 @@ export default function App() {
         <ArticleDetail
           article={articles.find(a => a.id === selectedArticleId) || articles[0]}
           lang={lang}
+          isAnnounceVisible={isAnnounceVisible}
           onGoToHome={() => {
             if (window.history.state && window.history.state.view === 'article-detail') {
               window.history.back();

@@ -63,16 +63,12 @@ export default function Articles({ lang, articles, onArticleClick }) {
                         SANAD
                       </div>
                     )}
-                    {/* Category Overlay Tag */}
-                    <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-[#4c6cd0] px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider shadow-sm">
-                      {lang === 'en' ? art.categoryEn : art.categoryAr}
-                    </span>
                   </div>
 
                   {/* Card Details */}
                   <div className="p-5 flex flex-col gap-2.5">
                     <span className="text-[10px] text-slate-400 font-bold tracking-wider">
-                      {art.date}
+                      <span dir="ltr">{art.date}</span>
                     </span>
                     <h3 className="text-sm font-bold text-slate-800 leading-snug tracking-tight group-hover:text-[#4c6cd0] transition-colors line-clamp-2">
                       {lang === 'en' ? art.titleEn : art.titleAr}
