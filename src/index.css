@@ -2119,6 +2119,8 @@ body.rtl .toast-info {
 }
 
 
+
+
 /* ─── Admin Page Root Reset ─── */
 .admin-page-root {
     margin: 0;
@@ -2128,26 +2130,19 @@ body.rtl .toast-info {
     background: #f1f5fb;
 }
 
-/* ─── Premium SaaS Admin Portal Styles ─── */
-
-/* Brand Colors (from logo)
-   Pillar Blue : #6b7fd7
-   Gold Text   : #e8a84e
-   Dark BG     : #0d1b35   (deep navy)
-   Mid BG      : #132044
-   Accent hover: #1e2f5c
-*/
+/* ─── Premium SaaS Admin Portal ─── */
 
 /* ── Layout ── */
 .admin-container {
     display: flex;
+    flex-direction: row;
     min-height: 100vh;
     background: #f1f5fb;
     font-family: 'Inter', -apple-system, sans-serif;
     position: relative;
 }
 
-/* ── Mobile top bar (hidden on desktop) ── */
+/* ── Mobile top bar — hidden on desktop ── */
 .admin-mobile-bar {
     display: none;
 }
@@ -2156,8 +2151,9 @@ body.rtl .toast-info {
 .admin-sidebar {
     width: 260px;
     min-width: 260px;
+    max-width: 260px;
     background: linear-gradient(175deg, #0d1b35 0%, #132044 60%, #0f1e40 100%);
-    border-right: 1px solid rgba(107, 127, 215, 0.15);
+    border-right: 1px solid rgba(76, 108, 208, 0.18);
     color: #cbd5e1;
     padding: 1.75rem 1.25rem 1.5rem;
     display: flex;
@@ -2166,12 +2162,15 @@ body.rtl .toast-info {
     height: 100vh;
     position: sticky;
     top: 0;
+    overflow-y: auto;
+    flex-shrink: 0;
     z-index: 100;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow-y: auto;
 }
 
 .admin-sidebar-inner {
+    display: flex;
+    flex-direction: column;
     flex: 1;
 }
 
@@ -2181,8 +2180,8 @@ body.rtl .toast-info {
     align-items: center;
     gap: 0.75rem;
     padding-bottom: 1.25rem;
-    margin-bottom: 1.25rem;
-    border-bottom: 1px solid rgba(107, 127, 215, 0.2);
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(76, 108, 208, 0.2);
     position: relative;
 }
 
@@ -2190,13 +2189,13 @@ body.rtl .toast-info {
     width: 40px;
     height: 40px;
     border-radius: 10px;
-    background: linear-gradient(135deg, rgba(107,127,215,0.25), rgba(107,127,215,0.1));
-    border: 1px solid rgba(107, 127, 215, 0.35);
+    background: linear-gradient(135deg, rgba(76,108,208,0.3), rgba(76,108,208,0.1));
+    border: 1px solid rgba(76, 108, 208, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 2px 12px rgba(107, 127, 215, 0.2);
+    box-shadow: 0 2px 12px rgba(76, 108, 208, 0.25);
 }
 
 .admin-brand-name {
@@ -2209,7 +2208,7 @@ body.rtl .toast-info {
 
 .admin-brand-sub {
     font-size: 0.65rem;
-    color: rgba(107, 127, 215, 0.75);
+    color: rgba(76, 108, 208, 0.85);
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -2217,7 +2216,7 @@ body.rtl .toast-info {
     margin-top: 2px;
 }
 
-/* Close button — only visible on mobile */
+/* Close button — desktop: hidden, mobile: shown */
 .admin-sidebar-close {
     display: none;
     margin-left: auto;
@@ -2228,6 +2227,7 @@ body.rtl .toast-info {
     padding: 4px;
     border-radius: 6px;
     transition: color 0.2s;
+    flex-shrink: 0;
 }
 .admin-sidebar-close:hover { color: #e2e8f0; }
 
@@ -2237,6 +2237,7 @@ body.rtl .toast-info {
     flex-direction: column;
     gap: 0.3rem;
     margin-top: 0.5rem;
+    flex: 1;
 }
 
 .admin-nav-item {
@@ -2255,23 +2256,22 @@ body.rtl .toast-info {
     width: 100%;
     transition: all 0.18s ease;
     position: relative;
-    overflow: hidden;
+    white-space: nowrap;
 }
 
 .admin-nav-item span {
-    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .admin-nav-item:hover {
     color: #e2e8f0;
-    background: rgba(107, 127, 215, 0.12);
+    background: rgba(76, 108, 208, 0.12);
 }
 
 .admin-nav-item.active {
     color: #ffffff;
-    background: linear-gradient(90deg, rgba(107,127,215,0.3), rgba(107,127,215,0.1));
+    background: linear-gradient(90deg, rgba(76,108,208,0.35), rgba(76,108,208,0.12));
     border-left: 3px solid #e8a84e;
     padding-left: calc(1rem - 3px);
     font-weight: 600;
@@ -2283,11 +2283,12 @@ body.rtl .toast-info {
 
 /* ── Sidebar footer ── */
 .admin-sidebar-footer {
-    border-top: 1px solid rgba(107, 127, 215, 0.15);
+    border-top: 1px solid rgba(76, 108, 208, 0.18);
     padding-top: 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    margin-top: auto;
 }
 
 .admin-user-info {
@@ -2301,12 +2302,12 @@ body.rtl .toast-info {
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    background: linear-gradient(135deg, rgba(107,127,215,0.3), rgba(107,127,215,0.1));
-    border: 1px solid rgba(107, 127, 215, 0.4);
+    background: linear-gradient(135deg, rgba(76,108,208,0.3), rgba(76,108,208,0.1));
+    border: 1px solid rgba(76, 108, 208, 0.45);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #6b7fd7;
+    color: #4c6cd0;
     flex-shrink: 0;
 }
 
@@ -2323,9 +2324,7 @@ body.rtl .toast-info {
     flex: 1;
     padding: 2.5rem 3rem;
     overflow-y: auto;
-    max-width: 1400px;
-    width: 100%;
-    min-width: 0; /* prevent flex blowout */
+    min-width: 0;
 }
 
 /* ── Stat Cards ── */
@@ -2381,8 +2380,8 @@ body.rtl .toast-info {
 }
 
 .status-pill-scheduled {
-    background: #eff1ff;
-    color: #4338ca;
+    background: #eef0ff;
+    color: #4c6cd0;
     border: 1px solid #c7d2fe;
 }
 
@@ -2419,8 +2418,8 @@ body.rtl .toast-info {
 }
 
 .admin-input:focus {
-    border-color: #6b7fd7;
-    box-shadow: 0 0 0 3px rgba(107,127,215,0.14);
+    border-color: #4c6cd0;
+    box-shadow: 0 0 0 3px rgba(76,108,208,0.14);
 }
 
 /* ── Search Bar ── */
@@ -2443,9 +2442,9 @@ body.rtl .toast-info {
     pointer-events: none;
 }
 
-/* ── Overlay backdrop (mobile) ── */
+/* ── Overlay backdrop — React controls when it's in the DOM ── */
 .admin-sidebar-backdrop {
-    display: none;
+    display: block;
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
@@ -2453,52 +2452,32 @@ body.rtl .toast-info {
     backdrop-filter: blur(2px);
 }
 
-/* ─── RESPONSIVE BREAKPOINTS ─── */
-
-/* Tablet — 1024px */
+/* ─── RESPONSIVE: Tablet ≤ 1024px ─── */
 @media (max-width: 1024px) {
+
+    /* Stack layout: mobile bar on top, then main content */
     .admin-container {
         flex-direction: column;
     }
 
-    .admin-sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        height: 100vh;
-        width: 280px;
-        transform: translateX(-100%);
-        z-index: 100;
-    }
-
-    .admin-sidebar.sidebar-open {
-        transform: translateX(0);
-        box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3);
-    }
-
-    .admin-sidebar-backdrop {
-        display: block;
-    }
-
-    .admin-sidebar-close {
-        display: flex;
-    }
-
+    /* Show mobile top bar */
     .admin-mobile-bar {
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 0.85rem 1.25rem;
         background: linear-gradient(90deg, #0d1b35, #132044);
-        border-bottom: 1px solid rgba(107, 127, 215, 0.2);
+        border-bottom: 1px solid rgba(76, 108, 208, 0.22);
         position: sticky;
         top: 0;
         z-index: 98;
+        min-height: 56px;
     }
 
+    /* Hamburger button */
     .admin-hamburger {
-        background: rgba(107,127,215,0.15);
-        border: 1px solid rgba(107,127,215,0.3);
+        background: rgba(76,108,208,0.15);
+        border: 1px solid rgba(76,108,208,0.35);
         color: #e8a84e;
         border-radius: 8px;
         padding: 0.45rem;
@@ -2510,21 +2489,48 @@ body.rtl .toast-info {
     }
 
     .admin-hamburger:hover {
-        background: rgba(107,127,215,0.25);
+        background: rgba(76,108,208,0.28);
+    }
+
+    /* Sidebar slides in as overlay from left */
+    .admin-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: 280px;
+        min-width: 280px;
+        max-width: 280px;
+        transform: translateX(-100%);
+        z-index: 101;
+        /* Override sticky from desktop */
+        padding-top: 1.5rem;
+    }
+
+    /* Open state — slides in */
+    .admin-sidebar.sidebar-open {
+        transform: translateX(0);
+        box-shadow: 6px 0 40px rgba(0, 0, 0, 0.35);
+    }
+
+    /* Show close button inside sidebar on mobile */
+    .admin-sidebar-close {
+        display: flex;
     }
 
     .admin-main {
         padding: 1.75rem 1.5rem;
-        max-width: 100%;
+        width: 100%;
     }
 }
 
-/* Phone — 640px */
+
+/* ─── RESPONSIVE: Phone ≤ 640px ─── */
 @media (max-width: 640px) {
     .admin-sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid rgba(107,127,215,0.2);
+        width: 85vw;
+        min-width: unset;
+        max-width: 320px;
     }
 
     .admin-main {
@@ -2535,4 +2541,3 @@ body.rtl .toast-info {
         max-width: 100%;
     }
 }
-
