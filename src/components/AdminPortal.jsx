@@ -25,7 +25,8 @@ import {
   Check,
   X,
   Languages,
-  BookOpen
+  BookOpen,
+  Menu
 } from 'lucide-react';
 
 const translateText = async (text, fromLang = 'ar', toLang = 'en') => {
@@ -133,6 +134,7 @@ export default function AdminPortal({
   const [editingArticle, setEditingArticle] = useState(null); // { id, form: {...} }
   const [searchQuery, setSearchQuery] = useState('');
   const [cmsFormTab, setCmsFormTab] = useState('ar'); // 'ar' or 'en' for cleaner editing
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [publishingForm, setPublishingForm] = useState({
     titleEn: '',
@@ -414,70 +416,108 @@ export default function AdminPortal({
     c.phone?.includes(searchQuery)
   );
 
+  const handleNavClick = (tab) => {
+    setActiveTab(tab);
+    setSearchQuery('');
+    setSidebarOpen(false);
+  };
+
   return (
     <section id="admin-portal" className="admin-container">
-      
+
+      {/* ── Mobile Overlay Backdrop ── */}
+      {sidebarOpen && (
+        <div
+          className="admin-sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ── Mobile Top Bar ── */}
+      <div className="admin-mobile-bar">
+        <button
+          className="admin-hamburger"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label="Toggle navigation"
+        >
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+        <div className="flex items-center gap-2">
+          <img src="/logo-white-symbol.png" alt="SANAD" className="w-7 h-7 object-contain" />
+          <span className="text-white text-sm font-bold tracking-wide">{t.title}</span>
+        </div>
+        <div className="w-8" />{/* spacer */}
+      </div>
+
       {/* ── Sidebar Navigation ── */}
-      <aside className="admin-sidebar">
-        <div>
+      <aside className={`admin-sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
+        <div className="admin-sidebar-inner">
           {/* Logo Branding */}
-          <div className="flex items-center gap-3 border-b border-white/10 pb-5 mb-6">
-            <div className="bg-white/10 p-2 rounded-xl border border-white/10">
-              <img src="/logo-white-symbol.png" alt="SANAD" className="w-6 h-6 object-contain" />
+          <div className="admin-sidebar-logo">
+            <div className="admin-logo-icon-wrap">
+              <img src="/logo-white-symbol.png" alt="SANAD" className="w-7 h-7 object-contain" />
             </div>
             <div>
-              <h2 className="text-white text-base font-bold leading-none">{t.title}</h2>
-              <span className="text-[10px] text-slate-500 uppercase tracking-widest font-semibold block mt-1">SANAD Advisory</span>
+              <h2 className="admin-brand-name">{t.title}</h2>
+              <span className="admin-brand-sub">SANAD Consulting</span>
             </div>
+            {/* Close button on mobile */}
+            <button
+              className="admin-sidebar-close"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Close menu"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Navigation Items */}
           <nav className="admin-nav-list">
-            <button 
-              onClick={() => { setActiveTab('admin-stats-settings'); setSearchQuery(''); }}
+            <button
+              onClick={() => handleNavClick('admin-stats-settings')}
               className={`admin-nav-item ${activeTab === 'admin-stats-settings' ? 'active' : ''}`}
             >
-              <LayoutDashboard className="w-4 h-4" />
-              {t.tabStats}
+              <LayoutDashboard className="w-4 h-4 shrink-0" />
+              <span>{t.tabStats}</span>
             </button>
-            <button 
-              onClick={() => { setActiveTab('admin-appointments'); setSearchQuery(''); }}
+            <button
+              onClick={() => handleNavClick('admin-appointments')}
               className={`admin-nav-item ${activeTab === 'admin-appointments' ? 'active' : ''}`}
             >
-              <Calendar className="w-4 h-4" />
-              {t.tabAppointments}
+              <Calendar className="w-4 h-4 shrink-0" />
+              <span>{t.tabAppointments}</span>
             </button>
-            <button 
-              onClick={() => { setActiveTab('admin-contacts'); setSearchQuery(''); }}
+            <button
+              onClick={() => handleNavClick('admin-contacts')}
               className={`admin-nav-item ${activeTab === 'admin-contacts' ? 'active' : ''}`}
             >
-              <Mail className="w-4 h-4" />
-              {t.tabContacts}
+              <Mail className="w-4 h-4 shrink-0" />
+              <span>{t.tabContacts}</span>
             </button>
-            <button 
-              onClick={() => { setActiveTab('admin-publishing'); setSearchQuery(''); }}
+            <button
+              onClick={() => handleNavClick('admin-publishing')}
               className={`admin-nav-item ${activeTab === 'admin-publishing' ? 'active' : ''}`}
             >
-              <FileText className="w-4 h-4" />
-              {t.tabPublishing}
+              <FileText className="w-4 h-4 shrink-0" />
+              <span>{t.tabPublishing}</span>
             </button>
           </nav>
         </div>
 
         {/* Profile / Logout Bottom Block */}
-        <div className="border-t border-white/10 pt-4 flex flex-col gap-3">
-          <div className="flex items-center gap-2 px-2">
-            <div className="w-8 h-8 rounded-full bg-[#4c6cd0]/20 border border-[#4c6cd0]/40 flex items-center justify-center">
-              <User className="w-4 h-4 text-[#4c6cd0]" />
+        <div className="admin-sidebar-footer">
+          <div className="admin-user-info">
+            <div className="admin-user-avatar">
+              <User className="w-4 h-4" />
             </div>
             <div>
               <span className="text-xs font-semibold text-white block">Administrator</span>
-              <span className="text-[10px] text-slate-500 block">role: admin</span>
+              <span className="text-[10px] text-slate-400 block">role: admin</span>
             </div>
           </div>
-          <button onClick={onLogout} className="admin-nav-item !text-red-400 hover:!bg-red-950/20 flex items-center justify-center gap-2">
-            <LogOut className="w-4 h-4" />
-            {t.logout}
+          <button onClick={onLogout} className="admin-nav-item admin-logout-btn">
+            <LogOut className="w-4 h-4 shrink-0" />
+            <span>{t.logout}</span>
           </button>
         </div>
       </aside>

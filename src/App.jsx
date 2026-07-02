@@ -540,7 +540,7 @@ export default function App() {
 
   if (currentPath === '/admin') {
     return (
-      <div className="app-root bg-slate-50 min-h-screen flex flex-col justify-between">
+      <div className="app-root admin-page-root">
         {!user ? (
           <PortalLoginModal
             targetPortal="admin"
