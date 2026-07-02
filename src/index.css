@@ -2464,7 +2464,7 @@ body:has(.admin-page-root) #root,
         flex-direction: column;
     }
 
-    /* Show mobile top bar (solid brand blue #4c6cd0) */
+    /* Show mobile top bar (solid brand blue #4c6cd0) - FIXED at top of viewport */
     .admin-mobile-bar {
         display: flex;
         align-items: center;
@@ -2472,10 +2472,13 @@ body:has(.admin-page-root) #root,
         padding: 0.85rem 1.25rem;
         background: #4c6cd0;
         border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-        position: sticky;
+        position: fixed;
         top: 0;
-        z-index: 98;
+        left: 0;
+        right: 0;
+        z-index: 9997; /* below sidebar overlay but above main content */
         min-height: 56px;
+        height: 56px;
     }
 
     /* Hamburger button */
@@ -2525,6 +2528,7 @@ body:has(.admin-page-root) #root,
     .admin-main {
         margin-left: 0 !important;
         padding: 1.75rem 1.5rem;
+        padding-top: calc(1.75rem + 56px) !important; /* Offset for fixed top bar */
         width: 100%;
     }
 }
