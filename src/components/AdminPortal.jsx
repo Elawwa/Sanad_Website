@@ -472,7 +472,7 @@ export default function AdminPortal({
           </div>
 
           {/* Navigation Items */}
-          <nav className="admin-nav-list">
+          <div className="admin-nav-list">
             <button
               onClick={() => handleNavClick('admin-stats-settings')}
               className={`admin-nav-item ${activeTab === 'admin-stats-settings' ? 'active' : ''}`}
@@ -501,7 +501,7 @@ export default function AdminPortal({
               <FileText className="w-4 h-4 shrink-0" />
               <span>{t.tabPublishing}</span>
             </button>
-          </nav>
+          </div>
         </div>
 
         {/* Profile / Logout Bottom Block */}
