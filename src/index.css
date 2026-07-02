@@ -2118,4 +2118,202 @@ body.rtl .toast-info {
     to { transform: rotate(0deg); }
 }
 
+/* ─── Premium SaaS Admin Portal Styles ─── */
+.admin-container {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+    background: #f8fafc;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+@media (max-width: 1024px) {
+    .admin-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.admin-sidebar {
+    background: #0f172a;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    padding: 1.75rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+@media (max-width: 1024px) {
+    .admin-sidebar {
+        height: auto;
+        position: relative;
+    }
+}
+
+.admin-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 2rem;
+}
+
+.admin-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #94a3b8;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: all 0.2s ease;
+}
+
+.admin-nav-item:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-nav-item.active {
+    color: #ffffff;
+    background: #4c6cd0;
+    box-shadow: 0 4px 12px rgba(76, 108, 208, 0.25);
+}
+
+.admin-main {
+    padding: 2.5rem 3rem;
+    overflow-y: auto;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    .admin-main {
+        padding: 1.5rem;
+    }
+}
+
+/* Premium Dashboard Widgets */
+.admin-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    transition: all 0.3s ease;
+}
+
+.admin-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04);
+}
+
+/* Timeline Cards */
+.admin-feed-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.01);
+    transition: all 0.2s ease;
+}
+
+.admin-feed-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.03);
+}
+
+/* Pill Badges */
+.status-pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.status-pill-pending {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.status-pill-scheduled {
+    background: #e0e7ff;
+    color: #4338ca;
+    border: 1px solid #c7d2fe;
+}
+
+.status-pill-completed {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.status-pill-unread {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.status-pill-read {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+/* Inputs & Forms */
+.admin-input {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    background: #ffffff;
+    color: #0f172a;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.admin-input:focus {
+    border-color: #4c6cd0;
+    box-shadow: 0 0 0 3px rgba(76,108,208,0.12);
+}
+
+/* Search Bar Wrapper */
+.search-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+}
+
+.search-wrapper input {
+    padding-left: 2.25rem;
+}
+
+.search-icon-pos {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+
 
