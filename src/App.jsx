@@ -206,6 +206,50 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // --- Inactivity Auto-Logout Timer ---
+  useEffect(() => {
+    if (!user || user.role !== 'admin') return;
+
+    const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+    let lastActivity = Date.now();
+
+    const resetTimer = () => {
+      lastActivity = Date.now();
+    };
+
+    window.addEventListener('mousemove', resetTimer);
+    window.addEventListener('keydown', resetTimer);
+    window.addEventListener('click', resetTimer);
+    window.addEventListener('scroll', resetTimer);
+
+    const interval = setInterval(async () => {
+      if (Date.now() - lastActivity > INACTIVITY_TIMEOUT) {
+        console.log('Inactivity timeout reached. Logging out admin.');
+        try {
+          await signOut(auth);
+          setUser(null);
+          setPortal('client');
+          showToast(
+            lang === 'en' 
+              ? 'Session expired due to inactivity. Please log in again.' 
+              : 'انتهت صلاحية الجلسة بسبب عدم النشاط. يرجى تسجيل الدخول مرة أخرى.', 
+            'warning'
+          );
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }, 10000);
+
+    return () => {
+      window.removeEventListener('mousemove', resetTimer);
+      window.removeEventListener('keydown', resetTimer);
+      window.removeEventListener('click', resetTimer);
+      window.removeEventListener('scroll', resetTimer);
+      clearInterval(interval);
+    };
+  }, [user, lang]);
+
   // --- Action Handlers ---
 
   const handleLangToggle = () => {
