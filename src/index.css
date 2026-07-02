@@ -2118,9 +2118,6 @@ body.rtl .toast-info {
     to { transform: rotate(0deg); }
 }
 
-
-
-
 /* ─── Admin Page Root Reset ─── */
 .admin-page-root {
     margin: 0;
@@ -2140,6 +2137,7 @@ body.rtl .toast-info {
     background: #f1f5fb;
     font-family: 'Inter', -apple-system, sans-serif;
     position: relative;
+    width: 100%;
 }
 
 /* ── Mobile top bar — hidden on desktop ── */
@@ -2147,7 +2145,7 @@ body.rtl .toast-info {
     display: none;
 }
 
-/* ── Sidebar ── */
+/* ── Sidebar (Fixed positioning on desktop to fit screen perfectly) ── */
 .admin-sidebar {
     width: 260px;
     min-width: 260px;
@@ -2160,11 +2158,13 @@ body.rtl .toast-info {
     flex-direction: column;
     justify-content: space-between;
     height: 100vh;
-    position: sticky;
+    position: fixed;
+    left: 0;
     top: 0;
+    bottom: 0;
     overflow-y: auto;
     flex-shrink: 0;
-    z-index: 100;
+    z-index: 9999;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -2189,8 +2189,8 @@ body.rtl .toast-info {
     width: 40px;
     height: 40px;
     border-radius: 10px;
-    background: linear-gradient(135deg, rgba(76,108,208,0.3), rgba(76,108,208,0.1));
-    border: 1px solid rgba(76, 108, 208, 0.4);
+    background: linear-gradient(135deg, rgba(76, 108, 208, 0.35), rgba(76, 108, 208, 0.15));
+    border: 1px solid rgba(76, 108, 208, 0.45);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2201,7 +2201,7 @@ body.rtl .toast-info {
 .admin-brand-name {
     font-size: 0.875rem;
     font-weight: 700;
-    color: #e8a84e;
+    color: #ffc57e;
     line-height: 1.1;
     letter-spacing: 0.02em;
 }
@@ -2271,14 +2271,14 @@ body.rtl .toast-info {
 
 .admin-nav-item.active {
     color: #ffffff;
-    background: linear-gradient(90deg, rgba(76,108,208,0.35), rgba(76,108,208,0.12));
-    border-left: 3px solid #e8a84e;
+    background: linear-gradient(90deg, rgba(76, 108, 208, 0.35), rgba(76, 108, 208, 0.12));
+    border-left: 3px solid #ffc57e;
     padding-left: calc(1rem - 3px);
     font-weight: 600;
 }
 
 .admin-nav-item.active svg {
-    color: #e8a84e;
+    color: #ffc57e;
 }
 
 /* ── Sidebar footer ── */
@@ -2302,7 +2302,7 @@ body.rtl .toast-info {
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    background: linear-gradient(135deg, rgba(76,108,208,0.3), rgba(76,108,208,0.1));
+    background: linear-gradient(135deg, rgba(76, 108, 208, 0.35), rgba(76, 108, 208, 0.15));
     border: 1px solid rgba(76, 108, 208, 0.45);
     display: flex;
     align-items: center;
@@ -2319,9 +2319,10 @@ body.rtl .toast-info {
     color: #fca5a5 !important;
 }
 
-/* ── Main Content ── */
+/* ── Main Content (Offset on desktop for fixed sidebar) ── */
 .admin-main {
     flex: 1;
+    margin-left: 260px;
     padding: 2.5rem 3rem;
     overflow-y: auto;
     min-width: 0;
@@ -2448,7 +2449,7 @@ body.rtl .toast-info {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 99;
+    z-index: 9998;
     backdrop-filter: blur(2px);
 }
 
@@ -2478,7 +2479,7 @@ body.rtl .toast-info {
     .admin-hamburger {
         background: rgba(76,108,208,0.15);
         border: 1px solid rgba(76,108,208,0.35);
-        color: #e8a84e;
+        color: #ffc57e;
         border-radius: 8px;
         padding: 0.45rem;
         cursor: pointer;
@@ -2502,7 +2503,7 @@ body.rtl .toast-info {
         min-width: 280px;
         max-width: 280px;
         transform: translateX(-100%);
-        z-index: 101;
+        z-index: 9999;
         /* Override sticky from desktop */
         padding-top: 1.5rem;
     }
@@ -2519,11 +2520,11 @@ body.rtl .toast-info {
     }
 
     .admin-main {
+        margin-left: 0 !important;
         padding: 1.75rem 1.5rem;
         width: 100%;
     }
 }
-
 
 /* ─── RESPONSIVE: Phone ≤ 640px ─── */
 @media (max-width: 640px) {
@@ -2541,3 +2542,4 @@ body.rtl .toast-info {
         max-width: 100%;
     }
 }
+
