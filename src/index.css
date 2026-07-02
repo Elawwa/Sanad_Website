@@ -2031,3 +2031,91 @@ body.rtl .toast-info {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
 }
+
+/* ─── Premium Hero Section Enhancements ─── */
+.premium-glow-badge {
+    background: rgba(255, 197, 126, 0.08);
+    border: 1px solid rgba(255, 197, 126, 0.2);
+    box-shadow: 0 0 20px rgba(255, 197, 126, 0.05);
+    text-shadow: 0 0 10px rgba(255, 197, 126, 0.1);
+}
+
+.text-gradient-gold {
+    background: linear-gradient(135deg, #fff 30%, #ffc57e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-highlight {
+    background: linear-gradient(135deg, #ffc57e 0%, #ffdfb3 50%, #4c6cd0 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shineGradient 6s linear infinite;
+}
+
+@keyframes shineGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* 3D Glassmorphic Cards */
+.hero-glass-card {
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    transition: all 0.4s ease;
+}
+
+.hero-glass-card:hover {
+    border-color: rgba(255, 197, 126, 0.25);
+    box-shadow: 0 30px 60px -10px rgba(76, 108, 208, 0.15);
+    transform: translateY(-4px) scale(1.02);
+}
+
+/* Floating Animations */
+.animate-float-slow {
+    animation: floatAnim 8s ease-in-out infinite alternate;
+}
+
+.animate-float-delayed {
+    animation: floatAnim 8s ease-in-out infinite alternate;
+    animation-delay: 2.5s;
+}
+
+.animate-float-fast {
+    animation: floatAnim 6s ease-in-out infinite alternate;
+    animation-delay: 1s;
+}
+
+@keyframes floatAnim {
+    0% {
+        transform: translateY(0px);
+    }
+    100% {
+        transform: translateY(-12px);
+    }
+}
+
+.animate-spin-slow {
+    animation: spinSlow 35s linear infinite;
+}
+
+.animate-spin-reverse {
+    animation: spinReverse 25s linear infinite;
+}
+
+@keyframes spinSlow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes spinReverse {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0deg); }
+}
+
+
